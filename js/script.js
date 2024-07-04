@@ -355,7 +355,7 @@
 
         if (tipoDoc.toLowerCase() === "mandado de prisão" || tipoDoc.toLowerCase() === "mandado de internação") {
             // Formatar a varTextoFinal conforme especificado
-            varTextoFinal = `CONSTA VIA BNMP ${tipoDoc} CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
+            varTextoFinal = `CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
 
             // Adicionar a data de validade apenas se não for nula ou vazia
             if (dataValidade && dataValidade.trim() !== '') {
@@ -522,7 +522,7 @@ if (!/^Mandado de (Prisão|Internação)/i.test(textoTextarea)) {
 
         if (tipoDoc.toLowerCase() === "mandado de prisão" || tipoDoc.toLowerCase() === "mandado de internação") {
             // Formatar a varTextoFinal conforme especificado
-            varTextoFinal = `CONSTA VIA BNMP ${tipoDoc} CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
+            varTextoFinal = `CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
 
             // Adicionar a data de validade apenas se não for nula ou vazia
             if (dataValidade && dataValidade.trim() !== '') {
