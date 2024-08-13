@@ -133,6 +133,7 @@
             color: white;
             cursor: pointer;
             transition: all 300ms ease-in-out;
+			background-color: #14148a;
         }
 
         .material-symbols-outlined {
@@ -170,11 +171,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #14148a;
+            background-color: green;
         }
 
         .btnCopiar:hover {
-            background-color: #32328b;
+            background-color: #1f631f;
         }
 
         #btnAnalisarPDF {
