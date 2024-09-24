@@ -316,117 +316,65 @@
         }
     }
 
-    async function analisarTextoCompleto(textoCompleto, possuiFoto) {
-        // Extrair e popular as variáveis conforme as condições
-       var nMandado = textoCompleto.match(/(?:Nº|N°) do Mandado:\s*(\d{4,}[-.\d]+)/i);
-if (nMandado) {
-    nMandado = nMandado[1].trim();
-} else {
-    console.error('Número do mandado não encontrado.');
-}
+    async function analisarTextoCompleto(textoCompleto) {
+        // Tipo de Documento (MANDADO DE PRISÃO ou MANDADO DE INTERNAÇÃO)
+        var tipoDoc = textoCompleto.includes('MANDADO DE PRISÃO') ? 'MANDADO DE PRISÃO' :
+            textoCompleto.includes('MANDADO DE INTERNAÇÃO') ? 'MANDADO DE INTERNAÇÃO' : 'Tipo Desconhecido';
 
-var nome = textoCompleto.match(/Nome\s*:\s*(.+?)(?=\n)/i);
-if (nome) {
-    nome = nome[1].trim();
-} else {
-    console.error('Nome não encontrado.');
-}
+        // Nome da Pessoa
+        var nome = textoCompleto.match(/Nome da Pessoa:\s*([^\n]+)\s*CPF:/i);
+        nome = nome ? nome[1].trim() : 'Nome não encontrado';
+
+        // CPF
+        var cpf = textoCompleto.match(/CPF:\s*([^\n]+)\s*Teor do Documento:/i);
+        cpf = cpf ? cpf[1].trim() : 'CPF não encontrado';
+
+        // RG
+        var rg = textoCompleto.match(/RG:\s*([^\n]+)\s*Filiação:/i);
+        rg = rg ? rg[1].trim() : 'Não Informado';
+
+        // Número do Mandado até antes de "Data de validade"
+        var nMandado = textoCompleto.match(/N[º°] do Mandado:\s*([^\n]+?)\s*(?=Data de validade)/i);
+        nMandado = nMandado ? nMandado[1].trim() : 'Mandado não encontrado';
 
 
-        var nMandado = textoCompleto.match(/(?:Nº|N°) do Mandado: ([^\n]{36})/i);
-        if (nMandado) nMandado = nMandado[1].trim();
+        // Data de Validade
+        var dataValidade = textoCompleto.match(/Data de validade:\s*([^\n]+)\s*Nome Social:/i);
+        dataValidade = dataValidade ? dataValidade[1].trim() : 'Data de validade não encontrada';
 
-        var dataValidadeMatch = textoCompleto.match(/(?<=Data de validade:)(.{10})(?=.+)/i);
-        if (dataValidadeMatch) {
-            var dataValidade = dataValidadeMatch[0].trim().replace(/\./g, '/');
-        }
+        // Número do Processo
+        var nProcesso = textoCompleto.match(/Nº do processo:\s*([^\n]+)\s*Órgão Judicial:/i);
+        nProcesso = nProcesso ? nProcesso[1].trim() : 'Processo não encontrado';
 
-        var nomePai = textoCompleto.match(/(?<=Nome do Pai:)(.+?)(?=Alcunha:)/i);
-        if (nomePai) nomePai = nomePai[0].trim();
+        // Tipificação Penal (ajuste para pegar artigos)
+        var tipPenal = textoCompleto.match(/Tipificação Penal:\s*(.*?)\s*Condenação:/is);
+        tipPenal = tipPenal ? tipPenal[1].trim().replace(/\s+/g, ' ') : 'Tipificação Penal não encontrada';
 
-        var alcunha = textoCompleto.match(/(?<=Alcunha:)(.+?)(?=Nome da Mãe:)/i);
-        if (alcunha) alcunha = alcunha[0].trim();
-
-        var nomeMae = textoCompleto.match(/(?<=Nome da Mãe:)(.+?)(?=Natural de:)/i);
-        if (nomeMae) nomeMae = nomeMae[0].trim();
-
-        var dataNasc = textoCompleto.match(/(?<=Data de Nasc.:)(.+?)(?=\sRJI:)/i);
-        if (dataNasc) dataNasc = dataNasc[0].trim();
-
-        var rji = textoCompleto.match(/(?<=RJI:)(.+?)(?=\sNome:)/i);
-        if (rji) rji = rji[0].trim();
-
-        var sexo = textoCompleto.match(/(?<=Sexo:)(.+?)(?=CPF:)/i);
-        if (sexo) sexo = sexo[0].trim();
-
-        var cpf = textoCompleto.match(/(?<=CPF:)(.+?)(?=RG:)/i);
-        if (cpf) cpf = cpf[0].trim();
-
-        var rg = textoCompleto.match(/RG:\s*([0-9.-]+|X)\b/i);
-        if (rg) rg = rg[1].trim();
-
-        var nProcesso = textoCompleto.match(/(?:Nº|N°) do Processo:\s*([^\n]{25})/i);
-        if (nProcesso) nProcesso = nProcesso[1].trim();
-
-        var tipPenal = textoCompleto.match(/Tipificação Penal:\s*(.*?)\s*Teor do Documento:/is);
-        if (tipPenal) tipPenal = tipPenal[1].replace(/\s{2,}/g, ' ').trim();
-
-        var dataExpedicao = textoCompleto.match(/Local e Data:\s*[^,]+,\s*([\s\S]*)/i);
-        if (dataExpedicao) dataExpedicao = dataExpedicao[1].trim();
-
-        // Extrair os artigos da tipificação penal
+        // Extração dos artigos do tipo penal
         var artigos = extrairArtigos(tipPenal);
+        var tipificacaoPenalFormatada = artigos.length > 0 ? `${artigos.join(', ')}` : tipPenal;
 
-        // Criar a variável varTextoFinal
-        var varTextoFinal = '';
+        // Data de Expedição (captura apenas a data no formato dd/mm/aaaa)
+        var dataExpedicao = textoCompleto.match(/Documento gerado em:\s*(\d{2}\/\d{2}\/\d{4})/i);
+        dataExpedicao = dataExpedicao ? dataExpedicao[1].trim() : 'Data de expedição não encontrada';
 
-        if (tipoDoc.toLowerCase() === "mandado de prisão" || tipoDoc.toLowerCase() === "mandado de internação") {
-            // Formatar a varTextoFinal conforme especificado
-            varTextoFinal = `CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
+        // Formatar a saída final
+        var varTextoFinal = `
+        MORADOR(A) DO END. CADASTRADO, CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado}, - DATA DE VALIDADE: ${dataValidade}, - Nº DO PROCESSO: ${nProcesso}, - TIPIFICACAO PENAL: ${tipificacaoPenalFormatada}, - EXPEDIDO EM: ${dataExpedicao} / COPOM CAPTURA.`.trim();
 
-            // Adicionar a data de validade apenas se não for nula ou vazia
-            if (dataValidade && dataValidade.trim() !== '') {
-                varTextoFinal += ` - DATA DE VALIDADE: ${dataValidade},`;
-            }
-
-            varTextoFinal += ` - Nº DO PROCESSO: ${nProcesso}, - TIPIFICAÇÃO PENAL: ${artigos.join(', ')}, - EXPEDIDO EM: ${dataExpedicao}`;
-
-            // Adicionar "possui foto no detecta" se possuiFoto for verdadeiro
-            if (possuiFoto) {
-                varTextoFinal += ' possui foto no detecta';
-            }
-
-            varTextoFinal += ` / COPOM CAPTURA.`;
-        }
-
-        // Mostrar as variáveis povoadas no console
-        console.log("Tipo de Documento:", tipoDoc);
-        console.log("Nome:", nome);
-        console.log("Alcunha:", alcunha);
-        console.log("Sexo:", sexo);
-        console.log("RG:", rg);
-        console.log("CPF:", cpf);
-        console.log("Data de Nascimento:", dataNasc);
-        console.log("Nome do Pai:", nomePai);
-        console.log("Nome da Mãe:", nomeMae);
-        console.log("Número do Mandado:", nMandado);
-        console.log("Data de Validade:", dataValidade);
-        console.log("RJI:", rji);
-        console.log("Número do Processo:", nProcesso);
-        console.log("Tipificação Penal:", artigos.join(', '));
-        console.log("Data de Expedição:", dataExpedicao);
-
-        // Atualizar o textareaResultado com varTextoFinal
-        if (elementos.textareaResultado) {
-            elementos.textareaResultado.value = varTextoFinal;
-            atualizarContagemCaracteres();
-        }
-
-        // Armazenar os valores de CPF, RG e Nome para a função de cópia
-        elementos.cpf = cpf;
-        elementos.rg = rg;
-        elementos.nome = `"${nome}"`;  // Adicionando aspas ao nome
+        // Atualizar o textarea com o resultado
+        document.getElementById('textareaResultado').value = varTextoFinal;
+        atualizarContagemCaracteres();
     }
+
+    // Função para extrair os artigos da tipificação penal
+    function extrairArtigos(tipPenal) {
+        const regexArtigos = /art\.? \d+/gi;
+        const artigos = tipPenal.match(regexArtigos);
+        return [...new Set(artigos)].map(a => a.replace(/art\.?/i, '').trim());
+    }
+
+
 
     function extrairArtigos(tipPenal) {
         const regexArtigos = /art\. \d+/gi;
