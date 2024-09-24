@@ -20,7 +20,7 @@
         btnCopiarResultado: document.getElementById('btnCopiarResultado'),
         btnCopiarCPF: document.getElementById('btnCopiarCPF'),
         btnCopiarRG: document.getElementById('btnCopiarRG'),
-        btnCopiarNome: document.getElementById('btnCopiarNome'),  // Adicionado para copiar nome
+        btnCopiarNome: document.getElementById('btnCopiarNome'),
         bntAnalisarTXT: document.getElementById('bntAnalisarTXT')
     };
 
@@ -270,13 +270,13 @@
     async function analisarTextoPDF() {
         console.clear();
         var possuiFoto = false;
-    
+
         // Verificar se o checkbox está marcado
         var checkbox = document.getElementById('checkPossuiFotoPDF');
         if (checkbox.checked) {
             possuiFoto = true;
         }
-    
+
         const textoPDF = elementos.inputFile.files[0];
         if (textoPDF) {
             const fileReader = new FileReader();
@@ -313,54 +313,54 @@
         // Tipo de Documento (MANDADO DE PRISÃO ou MANDADO DE INTERNAÇÃO)
         var tipoDoc = textoCompleto.includes('MANDADO DE PRISÃO') ? 'MANDADO DE PRISÃO' :
             textoCompleto.includes('MANDADO DE INTERNAÇÃO') ? 'MANDADO DE INTERNAÇÃO' : 'Tipo Desconhecido';
-    
+
         // Nome da Pessoa
         var nome = textoCompleto.match(/Nome da Pessoa:\s*([^\n]+)\s*CPF:/i);
         nome = nome ? nome[1].trim() : 'Nome não encontrado';
-    
+
         // CPF
         var cpf = textoCompleto.match(/CPF:\s*([^\n]+)\s*Teor do Documento:/i);
         cpf = cpf ? cpf[1].trim() : 'CPF não encontrado';
-    
+
         // RG
         var rg = textoCompleto.match(/RG:\s*([^\n]+)\s*Filiação:/i);
         rg = rg ? rg[1].trim() : 'Não Informado';
-    
+
         // Número do Mandado até antes de "Data de validade"
         var nMandado = textoCompleto.match(/N[º°] do Mandado:\s*([^\n]+?)\s*(?=Data de validade)/i);
         nMandado = nMandado ? nMandado[1].trim() : 'Mandado não encontrado';
-    
+
         // Data de Validade
         var dataValidade = textoCompleto.match(/Data de validade:\s*([^\n]+)\s*Nome Social:/i);
         dataValidade = dataValidade ? dataValidade[1].trim() : 'Data de validade não encontrada';
-    
+
         // Número do Processo
         var nProcesso = textoCompleto.match(/Nº do processo:\s*([^\n]+)\s*Órgão Judicial:/i);
         nProcesso = nProcesso ? nProcesso[1].trim() : 'Processo não encontrado';
-    
+
         // Tipificação Penal (ajuste para pegar artigos)
         var tipPenal = textoCompleto.match(/Tipificação Penal:\s*(.*?)\s*Condenação:/is);
         tipPenal = tipPenal ? tipPenal[1].trim().replace(/\s+/g, ' ') : 'Tipificação Penal não encontrada';
-    
+
         // Extração dos artigos do tipo penal
         var artigos = extrairArtigos(tipPenal);
         var tipificacaoPenalFormatada = artigos.length > 0 ? `${artigos.join(', ')}` : tipPenal;
-    
+
         // Data de Expedição (captura apenas a data no formato dd/mm/aaaa)
         var dataExpedicao = textoCompleto.match(/Documento gerado em:\s*(\d{2}\/\d{2}\/\d{4})/i);
         dataExpedicao = dataExpedicao ? dataExpedicao[1].trim() : 'Data de expedição não encontrada';
-    
+
         // Formatar a saída final
         var varTextoFinal = `
         MORADOR(A) DO END. CADASTRADO, CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado}, - DATA DE VALIDADE: ${dataValidade}, - Nº DO PROCESSO: ${nProcesso}, - TIPIFICACAO PENAL: ${tipificacaoPenalFormatada}, - EXPEDIDO EM: ${dataExpedicao},`.trim();
-    
+
         // Adicionar "possui foto no detecta" se possuiFoto for verdadeiro
         if (possuiFoto) {
             varTextoFinal += ' - POSSUI FOTO NO DETECTA';
         }
-    
+
         varTextoFinal += ` / COPOM CAPTURA.`;
-    
+
         // Atualizar o textarea com o resultado
         document.getElementById('textareaResultado').value = varTextoFinal;
         atualizarContagemCaracteres();
@@ -403,71 +403,101 @@
         }
     }
 
+    // Função para copiar o CPF que está sendo exibido no textareaResultado, removendo pontos e traços
     function copiarCPF() {
-        const texto = elementos.cpf.trim().toUpperCase(); // Convertendo para maiúsculas e removendo espaços em branco desnecessários
+        const textoResultado = document.getElementById('textareaResultado').value;
+        const regexCpf = /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/; // Expressão regular para validar CPF no formato 000.000.000-00
+        const match = textoResultado.match(regexCpf); // Procurar o CPF no texto
 
-        // Verificar se há conteúdo antes de copiar
-        if (texto.length > 0) {
-            navigator.clipboard.writeText(texto)
-                .then(() => {
-                    // Chamar a função exibirAvisoFlutuante com sucesso=true
-                    exibirAvisoFlutuante(true);
-                })
-                .catch(err => {
-                    console.error('Erro ao copiar CPF:', err);
-                    // Chamar a função exibirAvisoFlutuante com sucesso=false
-                    exibirAvisoFlutuante(false);
-                });
+        if (match) {
+            let cpf = match[0]; // Pegar o CPF encontrado
+            cpf = cpf.replace(/[.-]/g, ''); // Remover pontos e traços do CPF
+
+            // Verificar se o CPF contém apenas números
+            if (/^\d{11}$/.test(cpf)) {
+                navigator.clipboard.writeText(cpf) // Copiar para a área de transferência
+                    .then(() => {
+                        exibirAvisoFlutuante(true, 'CPF copiado com sucesso!'); // Exibir mensagem específica para CPF
+                    })
+                    .catch(err => {
+                        console.error('Erro ao copiar CPF:', err);
+                        exibirAvisoFlutuante(false, 'Erro ao copiar o CPF.');
+                    });
+            } else {
+                exibirAvisoFlutuante(false, 'CPF não copiado. Formato inválido.');
+            }
         } else {
-            console.error('Nenhum CPF para copiar.');
-            // Chamar a função exibirAvisoFlutuante com sucesso=false
-            exibirAvisoFlutuante(false);
+            exibirAvisoFlutuante(false, 'CPF não encontrado no resultado.');
         }
     }
 
+
+
+
+
+    // Função para exibir o aviso flutuante com uma mensagem personalizada
+    function exibirAvisoFlutuante(sucesso, mensagem) {
+        var avisoFlutuante = document.getElementById('avisoFlutuante');
+        avisoFlutuante.textContent = mensagem;
+        avisoFlutuante.style.display = 'block';
+
+        // Esconder após 3 segundos
+        setTimeout(function () {
+            avisoFlutuante.style.display = 'none';
+        }, 3000);
+    }
+
+
+    // Função para copiar o RG que está sendo exibido no textareaResultado, removendo pontos, traços e letras
     function copiarRG() {
-        const texto = elementos.rg.replace(/[\.\-]/g, '').trim().toUpperCase(); // Removendo pontos e traços, convertendo para maiúsculas e removendo espaços em branco desnecessários
+        const textoResultado = document.getElementById('textareaResultado').value;
+        const regexRg = /\b\d{1,2}\.\d{3}\.\d{3}-[0-9a-zA-Z]\b/; // Expressão regular para validar RG no formato 00.000.000-0 ou com letras
+        const match = textoResultado.match(regexRg); // Procurar o RG no texto
 
-        // Verificar se há conteúdo antes de copiar
-        if (texto.length > 0) {
-            navigator.clipboard.writeText(texto)
-                .then(() => {
-                    // Chamar a função exibirAvisoFlutuante com sucesso=true
-                    exibirAvisoFlutuante(true);
-                })
-                .catch(err => {
-                    console.error('Erro ao copiar RG:', err);
-                    // Chamar a função exibirAvisoFlutuante com sucesso=false
-                    exibirAvisoFlutuante(false);
-                });
+        if (match) {
+            let rg = match[0]; // Pegar o RG encontrado
+            rg = rg.replace(/\D/g, ''); // Remover qualquer caractere que não seja número
+
+            // Verificar se o RG contém apenas números após a remoção
+            if (rg.length >= 7 && rg.length <= 9) {
+                navigator.clipboard.writeText(rg) // Copiar para a área de transferência
+                    .then(() => {
+                        exibirAvisoFlutuante(true, 'RG copiado com sucesso!'); // Exibir mensagem específica para RG
+                    })
+                    .catch(err => {
+                        console.error('Erro ao copiar RG:', err);
+                        exibirAvisoFlutuante(false, 'Erro ao copiar o RG.');
+                    });
+            } else {
+                exibirAvisoFlutuante(false, 'RG não copiado. Formato inválido.');
+            }
         } else {
-            console.error('Nenhum RG para copiar.');
-            // Chamar a função exibirAvisoFlutuante com sucesso=false
-            exibirAvisoFlutuante(false);
+            exibirAvisoFlutuante(false, 'RG não encontrado no resultado.');
         }
     }
 
+    // Função para copiar o nome que está sendo exibido no textareaResultado
     function copiarNome() {
-        const texto = elementos.nome.trim(); // Não precisa converter para maiúsculas
+        const textoResultado = document.getElementById('textareaResultado').value;
+        const regexNome = /CONTRA:\s*([^,]+)/i; // Expressão regular para capturar o nome após "CONTRA:"
 
-        // Verificar se há conteúdo antes de copiar
-        if (texto.length > 0) {
-            navigator.clipboard.writeText(texto)
+        const match = textoResultado.match(regexNome); // Procurar o nome no texto
+
+        if (match) {
+            const nome = match[1].trim(); // Pegar o nome encontrado
+            navigator.clipboard.writeText(nome) // Copiar para a área de transferência
                 .then(() => {
-                    // Chamar a função exibirAvisoFlutuante com sucesso=true
-                    exibirAvisoFlutuante(true);
+                    exibirAvisoFlutuante(true, 'Nome copiado com sucesso!');
                 })
                 .catch(err => {
-                    console.error('Erro ao copiar Nome:', err);
-                    // Chamar a função exibirAvisoFlutuante com sucesso=false
-                    exibirAvisoFlutuante(false);
+                    console.error('Erro ao copiar nome:', err);
+                    exibirAvisoFlutuante(false, 'Erro ao copiar o nome.');
                 });
         } else {
-            console.error('Nenhum Nome para copiar.');
-            // Chamar a função exibirAvisoFlutuante com sucesso=false
-            exibirAvisoFlutuante(false);
+            exibirAvisoFlutuante(false, 'Nome não encontrado no resultado.');
         }
     }
+
 
     function exibirAvisoFlutuante(sucesso) {
         var avisoFlutuante = document.getElementById('avisoFlutuante');
