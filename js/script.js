@@ -318,11 +318,20 @@
 
     async function analisarTextoCompleto(textoCompleto, possuiFoto) {
         // Extrair e popular as variáveis conforme as condições
-        var tipoDoc = textoCompleto.match(/^(.*?)(?=Nº do Mandado|N° do Mandado)/i);
-        if (tipoDoc) tipoDoc = tipoDoc[0].trim();
+       var nMandado = textoCompleto.match(/(?:Nº|N°) do Mandado:\s*(\d{4,}[-.\d]+)/i);
+if (nMandado) {
+    nMandado = nMandado[1].trim();
+} else {
+    console.error('Número do mandado não encontrado.');
+}
 
-        var nome = textoCompleto.match(/Nome:(.+?)(?=Sexo:)/is);
-        if (nome) nome = nome[1].trim();
+var nome = textoCompleto.match(/Nome\s*:\s*(.+?)(?=\n)/i);
+if (nome) {
+    nome = nome[1].trim();
+} else {
+    console.error('Nome não encontrado.');
+}
+
 
         var nMandado = textoCompleto.match(/(?:Nº|N°) do Mandado: ([^\n]{36})/i);
         if (nMandado) nMandado = nMandado[1].trim();
