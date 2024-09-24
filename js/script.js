@@ -270,13 +270,13 @@
     async function analisarTextoPDF() {
         console.clear();
         var possuiFoto = false;
-
+    
         // Verificar se o checkbox está marcado
         var checkbox = document.getElementById('checkPossuiFotoPDF');
         if (checkbox.checked) {
             possuiFoto = true;
         }
-
+    
         const textoPDF = elementos.inputFile.files[0];
         if (textoPDF) {
             const fileReader = new FileReader();
@@ -300,15 +300,8 @@
                         }
                     });
                 }
-                // Realizar a análise do texto completo, verificando o tipo de documento
-                var tipoDoc = textoCompleto.match(/^(.*?)(?=Nº do Mandado|N° do Mandado)/);
-                if (tipoDoc && tipoDoc[0].trim() !== '') {
-                    console.log(textoCompleto);
-                    analisarTextoCompleto(textoCompleto, possuiFoto);
-                } else {
-                    alert('O Documento não é um Mandado de Prisão ou Mandado de Internação. Por favor, verifique o documento!');
-                    excluirPDF();
-                }
+                // Realizar a análise do texto completo
+                analisarTextoCompleto(textoCompleto, possuiFoto);
             };
             fileReader.readAsArrayBuffer(textoPDF);
         } else {
@@ -316,52 +309,58 @@
         }
     }
 
-    async function analisarTextoCompleto(textoCompleto) {
+    async function analisarTextoCompleto(textoCompleto, possuiFoto) {
         // Tipo de Documento (MANDADO DE PRISÃO ou MANDADO DE INTERNAÇÃO)
         var tipoDoc = textoCompleto.includes('MANDADO DE PRISÃO') ? 'MANDADO DE PRISÃO' :
             textoCompleto.includes('MANDADO DE INTERNAÇÃO') ? 'MANDADO DE INTERNAÇÃO' : 'Tipo Desconhecido';
-
+    
         // Nome da Pessoa
         var nome = textoCompleto.match(/Nome da Pessoa:\s*([^\n]+)\s*CPF:/i);
         nome = nome ? nome[1].trim() : 'Nome não encontrado';
-
+    
         // CPF
         var cpf = textoCompleto.match(/CPF:\s*([^\n]+)\s*Teor do Documento:/i);
         cpf = cpf ? cpf[1].trim() : 'CPF não encontrado';
-
+    
         // RG
         var rg = textoCompleto.match(/RG:\s*([^\n]+)\s*Filiação:/i);
         rg = rg ? rg[1].trim() : 'Não Informado';
-
+    
         // Número do Mandado até antes de "Data de validade"
         var nMandado = textoCompleto.match(/N[º°] do Mandado:\s*([^\n]+?)\s*(?=Data de validade)/i);
         nMandado = nMandado ? nMandado[1].trim() : 'Mandado não encontrado';
-
-
+    
         // Data de Validade
         var dataValidade = textoCompleto.match(/Data de validade:\s*([^\n]+)\s*Nome Social:/i);
         dataValidade = dataValidade ? dataValidade[1].trim() : 'Data de validade não encontrada';
-
+    
         // Número do Processo
         var nProcesso = textoCompleto.match(/Nº do processo:\s*([^\n]+)\s*Órgão Judicial:/i);
         nProcesso = nProcesso ? nProcesso[1].trim() : 'Processo não encontrado';
-
+    
         // Tipificação Penal (ajuste para pegar artigos)
         var tipPenal = textoCompleto.match(/Tipificação Penal:\s*(.*?)\s*Condenação:/is);
         tipPenal = tipPenal ? tipPenal[1].trim().replace(/\s+/g, ' ') : 'Tipificação Penal não encontrada';
-
+    
         // Extração dos artigos do tipo penal
         var artigos = extrairArtigos(tipPenal);
         var tipificacaoPenalFormatada = artigos.length > 0 ? `${artigos.join(', ')}` : tipPenal;
-
+    
         // Data de Expedição (captura apenas a data no formato dd/mm/aaaa)
         var dataExpedicao = textoCompleto.match(/Documento gerado em:\s*(\d{2}\/\d{2}\/\d{4})/i);
         dataExpedicao = dataExpedicao ? dataExpedicao[1].trim() : 'Data de expedição não encontrada';
-
+    
         // Formatar a saída final
         var varTextoFinal = `
-        MORADOR(A) DO END. CADASTRADO, CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado}, - DATA DE VALIDADE: ${dataValidade}, - Nº DO PROCESSO: ${nProcesso}, - TIPIFICACAO PENAL: ${tipificacaoPenalFormatada}, - EXPEDIDO EM: ${dataExpedicao} / COPOM CAPTURA.`.trim();
-
+        MORADOR(A) DO END. CADASTRADO, CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado}, - DATA DE VALIDADE: ${dataValidade}, - Nº DO PROCESSO: ${nProcesso}, - TIPIFICACAO PENAL: ${tipificacaoPenalFormatada}, - EXPEDIDO EM: ${dataExpedicao},`.trim();
+    
+        // Adicionar "possui foto no detecta" se possuiFoto for verdadeiro
+        if (possuiFoto) {
+            varTextoFinal += ' - POSSUI FOTO NO DETECTA';
+        }
+    
+        varTextoFinal += ` / COPOM CAPTURA.`;
+    
         // Atualizar o textarea com o resultado
         document.getElementById('textareaResultado').value = varTextoFinal;
         atualizarContagemCaracteres();
