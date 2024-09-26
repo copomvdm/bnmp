@@ -1,661 +1,141 @@
-(function () {
-    const elementos = {
-        lblInputFile: document.getElementById('lbl-input-file'),
-        inputFile: document.getElementById('input-file'),
-        nomePDF: document.getElementById('nome-pdf'),
-        btnExcluirPDF: document.getElementById('btnExcluirPDF'),
-        infoPDF: document.getElementById('info-pdf'),
-        btnAnalisarPDF: document.getElementById('btnAnalisarPDF'),
-        divPossuiFotoPDF: document.getElementById('divPossuiFotoPDF'),
-        divTextAreaTXT: document.getElementById('divTextAreaTXT'),
-        divPDF: document.getElementById('divPDF'),
-        checkPossuiFotoPDF: document.getElementById('checkPossuiFotoPDF'),
-        spanContagemCaracteresTXT: document.getElementById('spanContagemCaracteresTXT'),
-        spanContagemCaracteresResultado: document.getElementById('spanContagemCaracteresResultado'),
-        textareaTXT: document.getElementById('textareaTXT'),
-        textareaResultado: document.getElementById('textareaResultado'),
-        btnLimparTXT: document.getElementById('btnLimparTXT'),
-        checkPossuiFotoTXT: document.getElementById('checkPossuiFotoTXT'),
-        btnAnalisarPDF: document.getElementById('btnAnalisarPDF'),
-        btnCopiarResultado: document.getElementById('btnCopiarResultado'),
-        btnCopiarCPF: document.getElementById('btnCopiarCPF'),
-        btnCopiarRG: document.getElementById('btnCopiarRG'),
-        btnCopiarNome: document.getElementById('btnCopiarNome'),
-        bntAnalisarTXT: document.getElementById('bntAnalisarTXT')
-    };
 
-    // Definir o caminho para o script do worker do PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = './js/pdf.worker.min.js';
+// Função para prevenir o comportamento padrão do navegador
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
 
-    // Adicionando ouvinte de evento click para o botão de Analisar Texto
-    if (elementos.bntAnalisarTXT) {
-        elementos.bntAnalisarTXT.addEventListener('click', analisarTextoInicial);
-    } else {
-        console.error('Botão de Analisar Texto não encontrado');
+// Função para destacar a área de drag ao arrastar
+function highlight() {
+    const dragArea = document.getElementById('drag-area');
+    dragArea.classList.add('dragover');
+}
+
+// Função para remover o destaque ao sair da área de drag
+function unhighlight() {
+    const dragArea = document.getElementById('drag-area');
+    dragArea.classList.remove('dragover');
+}
+
+// Função para lidar com o arquivo arrastado
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFiles(files);
+}
+
+// Função para exibir o modal de erro com a mensagem apropriada
+function showModalError(message) {
+    const modalBody = document.querySelector("#modalErroArquivo .modal-body");
+    modalBody.textContent = message;
+    const modalErro = new bootstrap.Modal(document.getElementById('modalErroArquivo'));
+    modalErro.show();
+}
+
+// Função para carregar e exibir o arquivo
+function handleFiles(files) {
+    const fileInput = document.getElementById('input-file');
+
+    // Verificar se mais de um arquivo foi selecionado ou arrastado
+    if (files.length > 1) {
+        showModalError("Você só pode carregar um arquivo por vez.");
+        return;
     }
 
-    // Adicionando ouvinte de evento click para o botão de Analisar PDF
-    if (elementos.btnAnalisarPDF) {
-        elementos.btnAnalisarPDF.addEventListener('click', analisarTextoPDF);
-    } else {
-        console.error('Botão de Analisar PDF não encontrado.')
-    }
+    const file = files[0];
 
-    // Adicionando ouvinte de evento click para o botão de Copiar texto Resultado
-    if (elementos.btnCopiarResultado) {
-        elementos.btnCopiarResultado.addEventListener('click', copiarTextoResultado);
-    } else {
-        console.error('Botão de Copiar Resultado não encontrado.')
-    }
+    // Verificar se o arquivo é um PDF
+    if (file.type !== "application/pdf") {
+        // Se não for PDF, mostrar modal de erro
+        showModalError("O arquivo selecionado não é um PDF. Por favor, carregue um arquivo no formato PDF.");
 
-    // Adicionando ouvinte de evento click para o botão de Copiar CPF
-    if (elementos.btnCopiarCPF) {
-        elementos.btnCopiarCPF.addEventListener('click', copiarCPF);
-    } else {
-        console.error('Botão de Copiar CPF não encontrado.')
-    }
-
-    // Adicionando ouvinte de evento click para o botão de Copiar RG
-    if (elementos.btnCopiarRG) {
-        elementos.btnCopiarRG.addEventListener('click', copiarRG);
-    } else {
-        console.error('Botão de Copiar RG não encontrado.')
-    }
-
-    // Adicionando ouvinte de evento click para o botão de Copiar Nome
-    if (elementos.btnCopiarNome) {
-        elementos.btnCopiarNome.addEventListener('click', copiarNome);
-    } else {
-        console.error('Botão de Copiar Nome não encontrado.')
-    }
-
-    // Adicionando ouvinte de evento para o textarea Resultado
-    if (elementos.textareaResultado) {
-        elementos.textareaResultado.addEventListener('input', function () {
-            atualizarContagemCaracteres();
+        // Limpar o input quando o modal for fechado
+        const modalElement = document.getElementById('modalErroArquivo');
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            fileInput.value = ''; // Limpa o arquivo
+            const nomePdfSpan = document.getElementById('nome-pdf');
+            nomePdfSpan.textContent = "Nenhum ficheiro selecionado";
         });
+
+        return;
     }
 
-    // Adicionando ouvinte de evento para o textarea TXT
-    if (elementos.textareaTXT) {
-        elementos.textareaTXT.addEventListener('input', function () {
-            atualizarContagemCaracteres();
-        });
-    }
+    // Simular que o arquivo foi carregado no input-file
+    fileInput.files = files;
+    
+    // Atualizar o estado da interface, como se tivesse sido feito o upload por clique
+    const fileName = file ? file.name : "Nenhum ficheiro selecionado";
+    const infoPdfDiv = document.getElementById('info-pdf');
+    const nomePdfSpan = document.getElementById('nome-pdf');
+    const btnAnalisarPDF = document.getElementById('btnAnalisarPDF');
+    const possuiFotoPDF = document.getElementById('possuiFotoPDF');
+    const divCarregarPDF = document.getElementById('div-carregarPDF');
 
-    // Adicionando ouvinte de evento para o botão Botão Limpar Texto (btnLimparTXT)
-    if (elementos.btnLimparTXT) {
-        elementos.btnLimparTXT.addEventListener('click', btnLimparTexto);
+    if (file) {
+        nomePdfSpan.textContent = fileName;
+        infoPdfDiv.classList.remove('d-none');
+        btnAnalisarPDF.classList.remove('d-none');
+        possuiFotoPDF.classList.remove('d-none');
+        divCarregarPDF.classList.add('d-none');
     } else {
-        console.error('Botão de Limpar Texto não encontrado.');
+        nomePdfSpan.textContent = "Nenhum ficheiro selecionado";
+        infoPdfDiv.classList.add('d-none');
+        btnAnalisarPDF.classList.add('d-none');
+        possuiFotoPDF.classList.add('d-none');
+        divCarregarPDF.classList.remove('d-none');
     }
-
-    // Adicionando ouvinte de evento para o botão de exclusão
-    if (elementos.btnExcluirPDF) {
-        elementos.btnExcluirPDF.addEventListener('click', excluirPDF);
-    } else {
-        console.error('Botão de exclusão não encontrado.');
-    }
-
-    // Adicionando ouvinte de evento para o input file
-    if (elementos.inputFile) {
-        elementos.inputFile.addEventListener('change', carregarPDF);
-    } else {
-        console.error('Elemento input-file não encontrado.');
-    }
-
-    ocultarItens();
-
-    function carregarPDF() {
-        const { files } = elementos.inputFile;
-        if (files.length > 0) {
-            const fileName = files[0].name;
-            if (!fileName.endsWith('.pdf')) {
-                limparInput();
-                exibirMensagemErro('Selecione apenas arquivos com extensão .pdf');
-                return;
-            }
-            elementos.nomePDF.textContent = fileName;
-        } else {
-            elementos.nomePDF.textContent = 'Nenhum ficheiro selecionado';
-        }
-
-        elementos.infoPDF.style.display = 'flex';
-        elementos.lblInputFile.style.display = 'none';
-
-        if (elementos.btnAnalisarPDF) {
-            elementos.btnAnalisarPDF.style.display = 'flex';
-        } else {
-            console.error("Botão Analisar PDF não encontrado");
-        }
-
-        if (elementos.divPossuiFotoPDF) {
-            elementos.divPossuiFotoPDF.style.display = 'block';
-        } else {
-            console.error("Div Possui foto não encontrada");
-        }
-
-        if (elementos.divTextAreaTXT) {
-            elementos.divTextAreaTXT.style.display = 'none';
-        } else {
-            console.error('Div textarea TXT não encontrada')
-        }
-
-        mudarEstiloDivPDF();
-        limparTextarea();
-    }
-
-    function limparInput() {
-        if (elementos.inputFile) {
-            elementos.inputFile.value = '';
-        }
-    }
-
-    function excluirPDF() {
-        limparInput();
-        elementos.nomePDF.textContent = 'Nenhum ficheiro selecionado';
-        elementos.infoPDF.style.display = 'none';
-        elementos.lblInputFile.style.display = 'flex';
-
-        if (elementos.btnAnalisarPDF) {
-            elementos.btnAnalisarPDF.style.display = 'none';
-        } else {
-            console.error("Botão Analisar PDF não encontrado");
-        }
-
-        if (elementos.divPossuiFotoPDF) {
-            elementos.divPossuiFotoPDF.style.display = 'none';
-        } else {
-            console.error("Div Possui foto não encontrada");
-        }
-
-        if (elementos.divTextAreaTXT) {
-            elementos.divTextAreaTXT.style.display = 'flex';
-        } else {
-            console.error('Div textarea TXT não encontrada')
-        }
-        // Se o checkbox Possui foto PDF estiver checado, retire o checado.
-        if (elementos.checkPossuiFotoPDF) {
-            if (elementos.checkPossuiFotoPDF.checked) {
-                elementos.checkPossuiFotoPDF.checked = false;
-            }
-        }
-
-        limparTextarea();
-        restaurarEstiloDivPDF();
-        atualizarContagemCaracteres();
-        console.clear();
-    }
-
-    function exibirMensagemErro(mensagem) {
-        alert(mensagem);
-    }
-
-    function ocultarItens() {
-        if (elementos.inputFile) {
-            elementos.inputFile.style.display = 'none';
-        } else {
-            console.error("Input do tipo file não encontrado");
-        }
-
-        if (elementos.divPossuiFotoPDF) {
-            divPossuiFotoPDF.style.display = 'none';
-        }
-    }
-
-    function mudarEstiloDivPDF() {
-        if (elementos.divPDF) {
-            const estiloDivPDF = elementos.divPDF.style;
-            estiloDivPDF.border = '2px solid green';
-            estiloDivPDF.borderRadius = '5px';
-            estiloDivPDF.backgroundColor = '#b5dab5';
-        } else {
-            console.error("Div PDF não encontrada");
-        }
-    }
-
-    function restaurarEstiloDivPDF() {
-        if (elementos.divPDF) {
-            const estiloDivPDF = elementos.divPDF.style;
-            estiloDivPDF.border = '2px dashed #333';
-            estiloDivPDF.borderRadius = '';
-            estiloDivPDF.backgroundColor = '';
-        } else {
-            console.error("Div PDF não encontrada");
-        }
-    }
-
-    function atualizarContagemCaracteres() {
-        if (elementos.textareaTXT) {
-            const numCaracteresTXT = elementos.textareaTXT.value.length;
-            elementos.spanContagemCaracteresTXT.textContent = numCaracteresTXT + ' caracteres';
-        }
-
-        if (elementos.textareaResultado) {
-            const numCaracteresResultado = elementos.textareaResultado.value.length;
-            elementos.spanContagemCaracteresResultado.textContent = numCaracteresResultado + ' caracteres';
-        }
-    }
-
-    function limparTextarea() {
-        // Limpar o conteúdo do textarea TXT
-        if (elementos.textareaTXT.value.length > 0) {
-            elementos.textareaTXT.value = '';
-        }
-        // Limpar o conteúdo do textarea Resultado
-        if (elementos.textareaResultado.value.length > 0) {
-            elementos.textareaResultado.value = '';
-        }
-        atualizarContagemCaracteres();
-    }
-
-    function btnLimparTexto() {
-        limparTextarea();
-        elementos.textareaTXT.focus();
-
-        // Se o checkbox Possui foto PDF estiver checado, retire o checado.
-        if (elementos.checkPossuiFotoPDF) {
-            if (elementos.checkPossuiFotoPDF.checked) {
-                elementos.checkPossuiFotoPDF.checked = false;
-            }
-        }
-
-        if (elementos.checkPossuiFotoTXT) {
-            if (elementos.checkPossuiFotoTXT.checked) {
-                elementos.checkPossuiFotoTXT.checked = false;
-            }
-        }
-    }
-
-    async function analisarTextoPDF() {
-        console.clear();
-        var possuiFoto = false;
-
-        // Verificar se o checkbox está marcado
-        var checkbox = document.getElementById('checkPossuiFotoPDF');
-        if (checkbox.checked) {
-            possuiFoto = true;
-        }
-
-        const textoPDF = elementos.inputFile.files[0];
-        if (textoPDF) {
-            const fileReader = new FileReader();
-            fileReader.onload = async function () {
-                const typedarray = new Uint8Array(this.result);
-                // Carregando o PDF usando o PDF.js
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                const numPages = pdf.numPages;
-                let textoCompleto = '';
-                // Iterando sobre todas as páginas do PDF
-                for (let i = 1; i <= numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    // Extraindo o texto da página
-                    const textContent = await page.getTextContent();
-                    const textItems = textContent.items;
-                    // Concatenando todos os itens de texto da página
-                    textItems.forEach(function (item) {
-                        // Verificando se o item não é uma imagem
-                        if (item.type !== 'image') {
-                            textoCompleto += item.str + ' ';
-                        }
-                    });
-                }
-                // Realizar a análise do texto completo
-                analisarTextoCompleto(textoCompleto, possuiFoto);
-            };
-            fileReader.readAsArrayBuffer(textoPDF);
-        } else {
-            console.error('Nenhum arquivo PDF selecionado.');
-        }
-    }
-
-    async function analisarTextoCompleto(textoCompleto, possuiFoto) {
-        // Tipo de Documento (MANDADO DE PRISÃO ou MANDADO DE INTERNAÇÃO)
-        var tipoDoc = textoCompleto.includes('MANDADO DE PRISÃO') ? 'MANDADO DE PRISÃO' :
-            textoCompleto.includes('MANDADO DE INTERNAÇÃO') ? 'MANDADO DE INTERNAÇÃO' : 'Tipo Desconhecido';
-
-        // Nome da Pessoa
-        var nome = textoCompleto.match(/Nome da Pessoa:\s*([^\n]+)\s*CPF:/i);
-        nome = nome ? nome[1].trim() : 'Nome não encontrado';
-
-        // CPF
-        var cpf = textoCompleto.match(/CPF:\s*([^\n]+)\s*Teor do Documento:/i);
-        cpf = cpf ? cpf[1].trim() : 'CPF não encontrado';
-
-        // RG
-        var rg = textoCompleto.match(/RG:\s*([^\n]+)\s*Filiação:/i);
-        rg = rg ? rg[1].trim() : 'Não Informado';
-
-        // Número do Mandado até antes de "Data de validade"
-        var nMandado = textoCompleto.match(/N[º°] do Mandado:\s*([^\n]+?)\s*(?=Data de validade)/i);
-        nMandado = nMandado ? nMandado[1].trim() : 'Mandado não encontrado';
-
-        // Data de Validade
-        var dataValidade = textoCompleto.match(/Data de validade:\s*([^\n]+)\s*Nome Social:/i);
-        dataValidade = dataValidade ? dataValidade[1].trim() : 'Data de validade não encontrada';
-
-        // Número do Processo
-        var nProcesso = textoCompleto.match(/Nº do processo:\s*([^\n]+)\s*Órgão Judicial:/i);
-        nProcesso = nProcesso ? nProcesso[1].trim() : 'Processo não encontrado';
-
-        // Tipificação Penal (ajuste para pegar artigos)
-        var tipPenal = textoCompleto.match(/Tipificação Penal:\s*(.*?)\s*Condenação:/is);
-        tipPenal = tipPenal ? tipPenal[1].trim().replace(/\s+/g, ' ') : 'Tipificação Penal não encontrada';
-
-        // Extração dos artigos do tipo penal
-        var artigos = extrairArtigos(tipPenal);
-        var tipificacaoPenalFormatada = artigos.length > 0 ? `${artigos.join(', ')}` : tipPenal;
-
-        // Data de Expedição (captura apenas a data no formato dd/mm/aaaa)
-        var dataExpedicao = textoCompleto.match(/Documento gerado em:\s*(\d{2}\/\d{2}\/\d{4})/i);
-        dataExpedicao = dataExpedicao ? dataExpedicao[1].trim() : 'Data de expedição não encontrada';
-
-        // Formatar a saída final
-        var varTextoFinal = `
-        MORADOR(A) DO END. CADASTRADO, CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado}, - DATA DE VALIDADE: ${dataValidade}, - Nº DO PROCESSO: ${nProcesso}, - TIPIFICACAO PENAL: ${tipificacaoPenalFormatada}, - EXPEDIDO EM: ${dataExpedicao},`.trim();
-
-        // Adicionar "possui foto no detecta" se possuiFoto for verdadeiro
-        if (possuiFoto) {
-            varTextoFinal += ' - POSSUI FOTO NO DETECTA';
-        }
-
-        varTextoFinal += ` / COPOM CAPTURA.`;
-
-        // Atualizar o textarea com o resultado
-        document.getElementById('textareaResultado').value = varTextoFinal;
-        atualizarContagemCaracteres();
-    }
-
-    // Função para extrair os artigos da tipificação penal
-    function extrairArtigos(tipPenal) {
-        const regexArtigos = /art\.? \d+/gi;
-        const artigos = tipPenal.match(regexArtigos);
-        return [...new Set(artigos)].map(a => a.replace(/art\.?/i, '').trim());
-    }
-
-
-
-    function extrairArtigos(tipPenal) {
-        const regexArtigos = /art\. \d+/gi;
-        const artigos = tipPenal.match(regexArtigos);
-        return [...new Set(artigos)];
-    }
-
-    function copiarTextoResultado() {
-        const texto = elementos.textareaResultado.value.trim().toUpperCase(); // Convertendo para maiúsculas e removendo espaços em branco desnecessários
-
-        // Verificar se há conteúdo no textarea antes de copiar
-        if (texto.length > 0) {
-            navigator.clipboard.writeText(texto)
-                .then(() => {
-                    // Chamar a função exibirAvisoFlutuante com sucesso=true
-                    exibirAvisoFlutuante(true);
-                })
-                .catch(err => {
-                    console.error('Erro ao copiar texto:', err);
-                    // Chamar a função exibirAvisoFlutuante com sucesso=false
-                    exibirAvisoFlutuante(false);
-                });
-        } else {
-            console.error('Nenhum texto para copiar.');
-            // Chamar a função exibirAvisoFlutuante com sucesso=false
-            exibirAvisoFlutuante(false);
-        }
-    }
-
-    // Função para copiar o CPF que está sendo exibido no textareaResultado, removendo pontos e traços
-    function copiarCPF() {
-        const textoResultado = document.getElementById('textareaResultado').value;
-        const regexCpf = /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/; // Expressão regular para validar CPF no formato 000.000.000-00
-        const match = textoResultado.match(regexCpf); // Procurar o CPF no texto
-
-        if (match) {
-            let cpf = match[0]; // Pegar o CPF encontrado
-            cpf = cpf.replace(/[.-]/g, ''); // Remover pontos e traços do CPF
-
-            // Verificar se o CPF contém apenas números
-            if (/^\d{11}$/.test(cpf)) {
-                navigator.clipboard.writeText(cpf) // Copiar para a área de transferência
-                    .then(() => {
-                        exibirAvisoFlutuante(true, 'CPF copiado com sucesso!'); // Exibir mensagem específica para CPF
-                    })
-                    .catch(err => {
-                        console.error('Erro ao copiar CPF:', err);
-                        exibirAvisoFlutuante(false, 'Erro ao copiar o CPF.');
-                    });
-            } else {
-                exibirAvisoFlutuante(false, 'CPF não copiado. Formato inválido.');
-            }
-        } else {
-            exibirAvisoFlutuante(false, 'CPF não encontrado no resultado.');
-        }
-    }
-
-
-
-
-
-    // Função para exibir o aviso flutuante com uma mensagem personalizada
-    function exibirAvisoFlutuante(sucesso, mensagem) {
-        var avisoFlutuante = document.getElementById('avisoFlutuante');
-        avisoFlutuante.textContent = mensagem;
-        avisoFlutuante.style.display = 'block';
-
-        // Esconder após 3 segundos
-        setTimeout(function () {
-            avisoFlutuante.style.display = 'none';
-        }, 3000);
-    }
-
-
-    // Função para copiar o RG que está sendo exibido no textareaResultado, removendo pontos, traços e letras
-    function copiarRG() {
-        const textoResultado = document.getElementById('textareaResultado').value;
-        const regexRg = /\b\d{1,2}\.\d{3}\.\d{3}-[0-9a-zA-Z]\b/; // Expressão regular para validar RG no formato 00.000.000-0 ou com letras
-        const match = textoResultado.match(regexRg); // Procurar o RG no texto
-
-        if (match) {
-            let rg = match[0]; // Pegar o RG encontrado
-            rg = rg.replace(/\D/g, ''); // Remover qualquer caractere que não seja número
-
-            // Verificar se o RG contém apenas números após a remoção
-            if (rg.length >= 7 && rg.length <= 9) {
-                navigator.clipboard.writeText(rg) // Copiar para a área de transferência
-                    .then(() => {
-                        exibirAvisoFlutuante(true, 'RG copiado com sucesso!'); // Exibir mensagem específica para RG
-                    })
-                    .catch(err => {
-                        console.error('Erro ao copiar RG:', err);
-                        exibirAvisoFlutuante(false, 'Erro ao copiar o RG.');
-                    });
-            } else {
-                exibirAvisoFlutuante(false, 'RG não copiado. Formato inválido.');
-            }
-        } else {
-            exibirAvisoFlutuante(false, 'RG não encontrado no resultado.');
-        }
-    }
-
-    // Função para copiar o nome que está sendo exibido no textareaResultado
-    function copiarNome() {
-        const textoResultado = document.getElementById('textareaResultado').value;
-        const regexNome = /CONTRA:\s*([^,]+)/i; // Expressão regular para capturar o nome após "CONTRA:"
-
-        const match = textoResultado.match(regexNome); // Procurar o nome no texto
-
-        if (match) {
-            const nome = match[1].trim(); // Pegar o nome encontrado
-            navigator.clipboard.writeText(nome) // Copiar para a área de transferência
-                .then(() => {
-                    exibirAvisoFlutuante(true, 'Nome copiado com sucesso!');
-                })
-                .catch(err => {
-                    console.error('Erro ao copiar nome:', err);
-                    exibirAvisoFlutuante(false, 'Erro ao copiar o nome.');
-                });
-        } else {
-            exibirAvisoFlutuante(false, 'Nome não encontrado no resultado.');
-        }
-    }
-
-
-    function exibirAvisoFlutuante(sucesso) {
-        var avisoFlutuante = document.getElementById('avisoFlutuante');
-        avisoFlutuante.textContent = sucesso ? 'Texto Copiado com sucesso!' : 'Nenhum texto para copiar!';
-        avisoFlutuante.style.display = 'block';
-
-        // Esconder após 3 segundos
-        setTimeout(function () {
-            avisoFlutuante.style.display = 'none';
-        }, 3000);
-    }
-
-    function analisarTextoInicial() {
-        console.clear();
-
-        var tipoDoc = '';
-        var nome = '';
-        var alcunha = '';
-        var sexo = '';
-        var rg = '';
-        var cpf = '';
-        var dataNasc = '';
-        var nomePai = '';
-        var nomeMae = '';
-        var nMandado = '';
-        var dataValidade = '';
-        var rji = '';
-        var nProcesso = '';
-        var tipPenal = '';
-        var dataExpedicao = '';
-        var possuiFoto = false;
-
-        // Verificar se há texto no textareaTXT
-        var textoTextarea = document.getElementById('textareaTXT').value.trim();
-        if (textoTextarea === '') {
-            alert('Nenhum conteúdo a ser analisado.');
-            elementos.textareaTXT.focus();
-            return; // Sair da função se não houver texto no textareaTXT
-        }
-
-        // Verificar se o conteúdo do textarea NÃO começa com "Mandado de Prisão" ou "Mandado de Internação"
-        if (!/^Mandado de (Prisão|Internação)/i.test(textoTextarea)) {
-            alert('O conteúdo analisado não é um MANDADO DE PRISÃO ou MANDADO DE INTERNAÇÃO.');
-            limparTextarea();
-            elementos.textareaTXT.focus();
-            return; // Sair da função se o texto não for um mandado de prisão ou internação
-        }
-
-        // Verificar se o checkbox está marcado
-        var checkbox = document.getElementById('checkPossuiFotoTXT');
-        if (checkbox.checked) {
-            possuiFoto = true;
-        }
-
-        const txtResultadoFinal = elementos.textareaTXT.value;
-
-        const regexTipoDoc = /(MANDADO DE PRISÃO|MANDADO DE INTERNAÇÃO)/i;
-        const regexNome = /Nome:(.+?)(?=RJI:)/is;
-        const regexAlcunha = /Alcunha: (.+?)(?=\n)/i;
-        const regexSexo = /Sexo: (.+?)(?=\n)/i;
-        const regexRg = (/RG:\s*([0-9.-]+|X)\b/i);
-        const regexCpf = /CPF: (.+?)(?=\n)/;
-        const regexDataNasc = /Data de Nasc.: (.+?)(?=\n)/i;
-        const regexNomePai = /Nome do Pai: (.+?)(?=\n)/i;
-        const regexNomeMae = /Nome da Mãe: (.+?)(?=\n)/i;
-        const regexNMandado = /Mandado: (.+?)(?=\n)/i;
-        const regexDataValidade = /Data de validade:\s*([^\n]+)/i;
-        const regexRji = /RJI: (.+?)(?=\n)/i;
-        const regexNProcesso = /processo: (.+?)(?=\n)/i;
-        const regexTipPenal = (/Tipificação Penal:\s*(.*?)\s*Teor do Documento:/is);
-        const regexDataExpedicao = (/Local e Data:\s*[^,]+,\s*([\s\S]*)/i);
-
-        tipoDoc = capturarGrupo(regexTipoDoc, txtResultadoFinal);
-        nome = capturarGrupo(regexNome, txtResultadoFinal);
-        alcunha = capturarGrupo(regexAlcunha, txtResultadoFinal);
-        sexo = capturarGrupo(regexSexo, txtResultadoFinal);
-        rg = capturarGrupo(regexRg, txtResultadoFinal);
-        cpf = capturarGrupo(regexCpf, txtResultadoFinal);
-        dataNasc = capturarGrupo(regexDataNasc, txtResultadoFinal);
-        nomePai = capturarGrupo(regexNomePai, txtResultadoFinal);
-        nomeMae = capturarGrupo(regexNomeMae, txtResultadoFinal);
-        nMandado = capturarGrupo(regexNMandado, txtResultadoFinal);
-        dataValidade = capturarGrupo(regexDataValidade, txtResultadoFinal);
-        rji = capturarGrupo(regexRji, txtResultadoFinal);
-        nProcesso = capturarGrupo(regexNProcesso, txtResultadoFinal);
-        tipPenal = capturarGrupo(regexTipPenal, txtResultadoFinal);
-        dataExpedicao = capturarGrupo(regexDataExpedicao, txtResultadoFinal);
-
-        console.log("Tipo de Documento:", tipoDoc);
-        console.log("Nome:", nome);
-        console.log("Alcunha:", alcunha);
-        console.log("Sexo:", sexo);
-        console.log("RG:", rg);
-        console.log("CPF:", cpf);
-        console.log("Data de Nascimento:", dataNasc);
-        console.log("Nome do Pai:", nomePai);
-        console.log("Nome da Mãe:", nomeMae);
-        console.log("Número do Mandado:", nMandado);
-        console.log("Data de Validade:", dataValidade);
-        console.log("RJI:", rji);
-        console.log("Número do Processo:", nProcesso);
-        console.log("Tipificação Penal:", tipPenal);
-        console.log("Data de Expedição:", dataExpedicao);
-
-        // Extrair os artigos da tipificação penal
-        var artigos = extrairArtigos(tipPenal);
-
-        // Criar a variável varTextoFinal
-        var varTextoFinal = '';
-
-        if (tipoDoc.toLowerCase() === "mandado de prisão" || tipoDoc.toLowerCase() === "mandado de internação") {
-            // Formatar a varTextoFinal conforme especificado
-            varTextoFinal = `CONSTA ${tipoDoc} VIA BNMP CONTRA: ${nome}, - RG: ${rg}, - CPF: ${cpf}, - MANDADO: ${nMandado},`;
-
-            // Adicionar a data de validade apenas se não for nula ou vazia
-            if (dataValidade && dataValidade.trim() !== '') {
-                varTextoFinal += ` - DATA DE VALIDADE: ${dataValidade},`;
-            }
-
-            varTextoFinal += ` - Nº DO PROCESSO: ${nProcesso}, - TIPIFICAÇÃO PENAL: ${artigos.join(', ')}, - EXPEDIDO EM: ${dataExpedicao}`;
-
-            // Adicionar "possui foto no detecta" se possuiFoto for verdadeiro
-            if (possuiFoto) {
-                varTextoFinal += ' possui foto no detecta';
-            }
-
-            varTextoFinal += ` / COPOM CAPTURA.`;
-        }
-
-        // Defina o valor do textareaResultado como varTextoFinal
-        textareaResultado.value = varTextoFinal;
-        atualizarContagemCaracteres();
-
-        // Armazenar os valores de CPF, RG e Nome para a função de cópia
-        elementos.cpf = cpf;
-        elementos.rg = rg;
-        elementos.nome = `"${nome}"`;  // Adicionando aspas ao nome
-    }
-
-    function extrairArtigos(tipPenal) {
-        const regexArtigos = /art\. \d+/gi;
-        const artigos = tipPenal.match(regexArtigos);
-        return [...new Set(artigos)];
-    }
-
-    function capturarGrupo(regex, texto) {
-        const match = texto.match(regex);
-        return match ? match[1].trim() : '';
-    }
-
-    function exibirAvisoFlutuante(sucesso) {
-        var avisoFlutuante = document.getElementById('avisoFlutuante');
-        avisoFlutuante.textContent = sucesso ? 'Texto Copiado com sucesso!' : 'Nenhum texto para copiar!';
-        avisoFlutuante.style.display = 'block';
-
-        // Esconder após 3 segundos
-        setTimeout(function () {
-            avisoFlutuante.style.display = 'none';
-        }, 3000);
-    }
-})();
+}
+
+// Manter a funcionalidade do botão de upload
+document.getElementById('input-file').addEventListener('change', function(event) {
+    const files = event.target.files;
+    handleFiles(files);
+});
+
+// Selecionar a área de drag-and-drop
+const dragArea = document.getElementById('drag-area');
+
+// Adicionar eventos de drag-and-drop
+dragArea.addEventListener('dragenter', preventDefaults, false);
+dragArea.addEventListener('dragover', preventDefaults, false);
+dragArea.addEventListener('dragover', highlight, false);
+dragArea.addEventListener('dragleave', unhighlight, false);
+dragArea.addEventListener('drop', preventDefaults, false);
+dragArea.addEventListener('drop', unhighlight, false);
+dragArea.addEventListener('drop', handleDrop, false);
+
+// Evento de clique para excluir PDF
+document.getElementById('fecharPDF').addEventListener('click', function() {
+    const fileInput = document.getElementById('input-file');
+    const nomePdfSpan = document.getElementById('nome-pdf');
+    const infoPdfDiv = document.getElementById('info-pdf');
+    const btnAnalisarPDF = document.getElementById('btnAnalisarPDF');
+    const possuiFotoPDF = document.getElementById('possuiFotoPDF');
+    const divCarregarPDF = document.getElementById('div-carregarPDF');
+    const textareaResultado = document.getElementById('textareaResultado');  // Seleciona o textarea
+    const sectionResultado = document.getElementById('section-resultado');   // Seleciona a section de resultados
+
+    // Limpar o input de arquivo
+    fileInput.value = '';
+    nomePdfSpan.textContent = "Nenhum ficheiro selecionado";
+
+    // Ocultar as informações do PDF e o botão de análise
+    infoPdfDiv.classList.add('d-none');
+    btnAnalisarPDF.classList.add('d-none');
+    possuiFotoPDF.classList.add('d-none');
+
+    // Mostrar a div que contém o botão "Carregar PDF" novamente
+    divCarregarPDF.classList.remove('d-none'); // Mostrar
+
+    // Limpar o conteúdo do textarea
+    textareaResultado.value = '';  // Limpa o texto
+
+    // Ocultar novamente a section de resultado
+    sectionResultado.classList.add('d-none');  // Oculta a section de resultado
+
+    // Limpar o console
+    console.clear();
+});
+
+
+console.clear;

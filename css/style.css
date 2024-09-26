@@ -1,267 +1,250 @@
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
 
-        * {
-            padding: 0;
-            margin: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            width: 100vw;
-            font-family: 'Poppins', sans-serif;
-            font-style: normal;
-            overflow-x: hidden;
-        }
+body {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1rem;
+}
 
-        header {
-            width: 100%;
-            background-color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 15px;
-        }
+h1, h3 {
+    font-weight: 700;
+}
 
-        header h1 {
-            font-size: 2.3em;
-            color: white;
-        }
+/* Aparência sem PDF carregado */
+#div-carregarPDF {
+    padding: 30px;
+    border: 2px dashed #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
 
-        main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            width: 85%;
-            padding: 20px;
-        }
+#lbl-input-file {
+    display: inline-block;
+    background-color: #343a40;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
-        .divPDF {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border: 2px dashed #333;
-            width: 100%;
-            padding: 20px;
-            margin-bottom: 30px;
-            user-select: none;
-        }
+#lbl-input-file:hover {
+    background-color: #495057;
+}
 
-        .divPDF #lbl-input-file {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 18px;
-            font-weight: 700;
-            background-color: #333;
-            padding: 10px 40px;
-            color: white;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            transition: all 300ms ease-in-out;
-        }
+#lbl-input-file img {
+    width: 40px;
+}
 
-        .divPDF #lbl-input-file:hover {
-            scale: 1.04;
-        }
+#drag-area p {
+    margin: 10px 0 0;
+}
 
-        .divPDF img {
-            width: 25px;
-            height: auto;
-        }
+/* Aparência com PDF carregado */
+#info-pdf {
+    background-color: #e9ecef;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid #ced4da;
+}
 
-        .divPossuiFoto {
-            margin-bottom: 20px;
-        }
+.icon-pdf {
+    width: 30px;
+    margin-right: 10px;
+}
 
-        .divPossuiFoto label {
-            cursor: pointer;
-            user-select: none;
-        }
+/* Estilo específico para o ícone de fechar PDF */
+#info-pdf .fechar-ico {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
 
-        footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            padding: 15px;
-            height: 60px;
-            background-color: #333;
-            color: white;
-        }
+#info-pdf .fechar-ico:hover {
+    transform: scale(1.2);
+}
 
-        .info-pdf {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+/* Botões */
+.btn-danger {
+    background-color: #dc3545;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
 
-        .info-pdf #btnExcluirPDF {
-            margin-left: 15px;
-        }
+.btn-danger:hover {
+    background-color: #c82333;
+}
 
-        .info-pdf #nome-pdf {
-            color: #777777;
-            font-style: italic;
-        }
+.btn {
+    transition: all 0.3s ease;
+}
 
-        #btnExcluirPDF {
-            cursor: pointer;
-            transition: all 300ms ease-in-out;
-        }
+.btn:hover {
+    opacity: 0.85;
+}
 
-        #btnExcluirPDF:hover {
-            scale: 1.2;
-        }
+/* Estilo para o botão Analisar PDF */
+.btn-analisar {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-        .btn {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 5px 20px;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            transition: all 300ms ease-in-out;
-			background-color: #14148a;
-        }
+.btn-analisar:hover {
+    background-color: #0056b3;
+    opacity: 0.9;
+}
 
-        .material-symbols-outlined {
-            font-size: 30px;
-            font-variation-settings:
-                'FILL' 0,
-                'wght' 400,
-                'GRAD' 0,
-                'opsz' 24
-        }
+.btn-analisar .material-symbols-outlined {
+    font-size: 2rem; /* Aumentando o tamanho do ícone para deixá-lo mais destacado */
+    margin-right: 8px;
+}
 
-        .btnAnalisar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: green;
-        }
+/* Efeito visual quando o arquivo é arrastado para a área */
+#drag-area.dragover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+    border-width: 2px;
+    border-style: dashed;
+}
 
-        .btnAnalisar:hover {
-            background-color: #459645;
-        }
+/* Transições suaves */
+.form-check-input {
+    width: 20px;
+    height: 20px;
+}
 
-        .btnLimpar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #940000;
-        }
+#possuiFotoPDF label {
+    font-size: 1rem;
+    font-weight: 500;
+}
 
-        .btnLimpar:hover {
-            background-color: #b64646;
-        }
+textarea:focus {
+    border-color: #0d6efd;
+}
 
-        .btnCopiar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: green;
-        }
+/* Outras classes para layout geral */
+textarea {
+    resize: vertical;
+}
 
-        .btnCopiar:hover {
-            background-color: #1f631f;
-        }
+/* Rodapé */
+footer p {
+    margin: 0;
+}
 
-        #btnAnalisarPDF {
-            display: none;
-        }
+#avisoFlutuante {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    z-index: 9999;
+}
 
-        #h3 {
-            width: 100%;
-            margin-left: 65px;
-            text-align: left;
-        }
+#btnCopiarResultado {
+    padding: 10px 20px; /* Espaçamento para comportar o texto e o ícone */
+    border-radius: 6px; /* Altera o formato do botão para oval, já que terá um texto agora */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
 
-        .textarea {
-            background-color: #e6e6e6;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            border-radius: 5px;
-            margin-bottom: 30px;
-            user-select: none;
-        }
+#btnCopiarResultado:hover {
+    background-color: #6c757d;
+}
+
+#btnCopiarResultado .material-symbols-outlined {
+    font-size: 24px; /* Tamanho do ícone */
+}
 
 
-        .textarea h3 {
-            width: 100%;
-            margin-left: 15px;
-            text-align: left;
-        }
+#btnCopiarCPF {
+    padding: 10px 20px; /* Espaçamento para comportar o texto e o ícone */
+    border-radius: 6px; /* Altera o formato do botão para oval, já que terá um texto agora */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
 
-        .textarea .divTextAreaSpan {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
+#btnCopiarCPF:hover {
+    background-color: #6c757d;
+}
 
-        .textarea .divTextAreaSpan textarea {
-            outline: none;
-            padding: 10px;
-            border-radius: 5px;
-            width: 100%;
-            font-size: 17px;
-            font-weight: 400;
-            word-spacing: 4px;
-            resize: vertical;
-        }
+#btnCopiarCPF .material-symbols-outlined {
+    font-size: 24px; /* Tamanho do ícone */
+}
 
-        .textarea .divTextAreaSpan textarea:focus {
-            border-color: blue;
-        }
+#btnCopiarCPF span {
+    font-size: 16px; /* Tamanho do texto */
+    margin-left: 8px; /* Espaçamento entre o ícone e o texto */
+}
 
-        .textarea .divTextAreaSpan span {
-            text-align: right;
-            margin-right: 10px;
-            margin-top: 5px;
-            margin-bottom: 10px;
-            font-size: 0.8rem;
-            color: #8b8b8b;
-        }
 
-        #textareaResultado {
-            text-transform: uppercase;
-        }
+#btnCopiarRG {
+    padding: 10px 20px; /* Espaçamento para o texto e o ícone */
+    border-radius: 6px; /* Deixa o botão com um formato oval */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
 
-        .btnAcoes {
-            display: flex;
-            gap: 10px;
-        }
+#btnCopiarRG:hover {
+    background-color: #6c757d;
+}
 
-        #avisoFlutuante {
-            position: fixed;
-            /* Fixa a posição do elemento */
-            bottom: 70px;
-            /* Posiciona o elemento no topo da janela de visualização */
-            right: 20px;
-            background-color: rgba(170, 110, 20, 0.753);
-            /* Cor de fundo */
-            border-radius: 8px;
-            color: #fff;
-            /* Cor do texto */
-            padding: 10px;
-            /* Espaçamento interno */
-            display: none;
-            /* Inicialmente oculto */
-            z-index: 9999;
-            /* Garante que o aviso flutuante esteja sempre na frente de outros elementos */
-        }
+#btnCopiarRG .material-symbols-outlined {
+    font-size: 24px; /* Tamanho do ícone */
+}
+
+#btnCopiarRG span {
+    font-size: 16px; /* Tamanho do texto */
+    margin-left: 8px; /* Espaçamento entre o ícone e o texto */
+}
+
+
+#btnCopiarNome {
+    padding: 10px 20px; /* Espaçamento adequado para o texto e ícone */
+    border-radius: 6px; /* Deixa o botão com um formato oval */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+#btnCopiarNome:hover {
+    background-color: #6c757d;
+}
+
+#btnCopiarNome .material-symbols-outlined {
+    font-size: 24px; /* Tamanho do ícone */
+}
+
+#btnCopiarNome span {
+    font-size: 16px; /* Tamanho do texto */
+    margin-left: 8px; /* Espaçamento entre o ícone e o texto */
+}
+
+
+
+
+
