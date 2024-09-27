@@ -139,16 +139,18 @@
     </footer>
 
     <script>
-            // Verifica se o cookie de autenticação está presente
-            function checkAuthentication() {
-                if (document.cookie.indexOf("authenticated=true") === -1) {
-                    // Se o cookie não estiver presente, redireciona para a página de login
-                    window.location.href = "login.html";
-                }
+        // Verificar se o usuário está autenticado
+        function checkAuthentication() {
+            // Verifique se o localStorage contém a chave "authenticated"
+            if (localStorage.getItem("authenticated") !== "true") {
+                // Se não estiver autenticado, redirecione para a página de login
+                window.location.href = "https://coltseals.github.io/eqb/login.html";
             }
-            
-            // Execute essa função em qualquer página protegida
-            checkAuthentication();
+        }
+        
+        // Chamar a função de verificação de autenticação ao carregar a página
+        checkAuthentication();
+
 
     </script>
     
