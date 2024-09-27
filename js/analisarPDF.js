@@ -124,9 +124,11 @@ async function extractTextFromPDF(pdf) {
     });
 
     let artigoTexto = artigo ? `TIP PENAL: art. ${artigo}` : '';
-    let condenacaoTexto = condenacao ? `CONDENAÇÃO: ${condenacao}` : '';
+    let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `CONDENAÇÃO: ${condenacao}` : '';
 
-    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto}, ${possuiFoto} / COPOM CAPTURA.`;
+
+
+    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} ${possuiFoto} / COPOM CAPTURA.`;
 
     // Chama a função para atualizar a contagem de caracteres
     atualizarContagemCaracteres();
