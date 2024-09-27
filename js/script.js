@@ -111,6 +111,7 @@ document.getElementById('fecharPDF').addEventListener('click', function() {
     const infoPdfDiv = document.getElementById('info-pdf');
     const btnAnalisarPDF = document.getElementById('btnAnalisarPDF');
     const possuiFotoPDF = document.getElementById('possuiFotoPDF');
+    const checkPossuiFotoPDF = document.getElementById('checkPossuiFotoPDF');  // Seleciona o checkbox
     const divCarregarPDF = document.getElementById('div-carregarPDF');
     const textareaResultado = document.getElementById('textareaResultado');  // Seleciona o textarea
     const sectionResultado = document.getElementById('section-resultado');   // Seleciona a section de resultados
@@ -133,9 +134,13 @@ document.getElementById('fecharPDF').addEventListener('click', function() {
     // Ocultar novamente a section de resultado
     sectionResultado.classList.add('d-none');  // Oculta a section de resultado
 
+    // Desmarcar o checkbox
+    checkPossuiFotoPDF.checked = false;  // Desmarca o checkbox
+
     // Limpar o console
     console.clear();
 });
+
 
 
 console.clear;

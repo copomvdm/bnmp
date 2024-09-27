@@ -95,7 +95,7 @@ h1, h3 {
 
 /* Estilo para o botão Analisar PDF */
 .btn-analisar {
-    background-color: #007bff;
+    background-color: #12ca74;
     color: white;
     padding: 12px 24px;
     border: none;
@@ -109,7 +109,8 @@ h1, h3 {
 }
 
 .btn-analisar:hover {
-    background-color: #0056b3;
+    background-color: #0daa61;
+    color: white;
     opacity: 0.9;
 }
 
@@ -131,7 +132,9 @@ h1, h3 {
     width: 20px;
     height: 20px;
 }
-
+#possuiFotoPDF {
+    user-select: none;    
+}
 #possuiFotoPDF label {
     font-size: 1rem;
     font-weight: 500;
