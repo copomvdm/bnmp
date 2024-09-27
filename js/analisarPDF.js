@@ -65,14 +65,16 @@ function extractDate(text) {
     return match ? match[0] : '';
 }
 
-// Função para extrair os artigos da lei (somente os números)
+// Função para extrair os artigos da lei (somente os números) sem duplicatas
 function extractArticles(text) {
     const matches = text.match(/art\.\s*(\d+)/g);
     if (!matches) return '';  // Se não houver artigos, retorna vazio
 
-    const articles = matches.map(match => match.replace(/art\.\s*/, '').trim());
+    // Remove duplicatas usando Set
+    const articles = [...new Set(matches.map(match => match.replace(/art\.\s*/, '').trim()))];
     return articles.join(' / ');
 }
+
 
 // Função para extrair texto do PDF usando a biblioteca pdf.js
 async function extractTextFromPDF(pdf) {
