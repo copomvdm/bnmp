@@ -105,7 +105,7 @@ async function extractTextFromPDF(pdf) {
     tipDoc = identificarTipoMandado(textoCompleto);
     
     if (tipDoc) {
-        nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim();
+        nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
         filiacao = extractBetween(textoCompleto, 'Filiação:', 'Marcas e sinais:');
         numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || '';
         numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
