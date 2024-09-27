@@ -115,6 +115,7 @@ document.getElementById('fecharPDF').addEventListener('click', function() {
     const divCarregarPDF = document.getElementById('div-carregarPDF');
     const textareaResultado = document.getElementById('textareaResultado');  // Seleciona o textarea
     const sectionResultado = document.getElementById('section-resultado');   // Seleciona a section de resultados
+    const sectionTabela = document.getElementById('section-tabela');         // Seleciona a section da tabela
 
     // Limpar o input de arquivo
     fileInput.value = '';
@@ -137,9 +138,19 @@ document.getElementById('fecharPDF').addEventListener('click', function() {
     // Desmarcar o checkbox
     checkPossuiFotoPDF.checked = false;  // Desmarca o checkbox
 
+    // Limpar o conteúdo da tabela
+    document.getElementById('nome-tabela').textContent = '';
+    document.getElementById('rg-tabela').textContent = '';
+    document.getElementById('cpf-tabela').textContent = '';
+    document.getElementById('artigos-tabela').textContent = '';
+
+    // Ocultar a tabela
+    sectionTabela.classList.add('d-none');  // Oculta a section da tabela
+
     // Limpar o console
     console.clear();
 });
+
 
 
 

@@ -21,8 +21,10 @@
 
     <main class="container my-5">
         <!-- PDF Section -->
+         
         <section class="mb-5" id="section-pdf">
             <h3 class="mb-3">PDF</h3>
+            <!-- Seção para a tabela com os dados extraídos -->
             <div class="border border-dark border-dashed p-4 text-center rounded" id="pdf-container">
                 <div id="drag-area">
                     <div id="div-carregarPDF">
@@ -54,7 +56,6 @@
             </div>
         </section>
 
-        <!-- Modal de erro para arquivo inválido -->
         <div class="modal fade" id="modalErroArquivo" tabindex="-1" aria-labelledby="modalErroArquivoLabel" aria-hidden="true">
           <div class="modal-dialog">
             <div class="modal-content">
@@ -72,7 +73,6 @@
           </div>
         </div>
 
-        <!-- Resultado Section -->
         <section id="section-resultado" class="d-none">
             <h3 class="mb-3">Resultado</h3>
             <div class="mb-3">
@@ -105,6 +105,31 @@
                 
             </div>
         </section>
+        <section id="section-tabela" class="d-none mt-5">
+            <table class="table table-bordered" id="dados-tabela">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>RG</th>
+                        <th>CPF</th>
+                        <th>Artigos</th>
+                        <th>B</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="nome-tabela"></td>
+                        <td id="rg-tabela"></td>
+                        <td id="cpf-tabela"></td>
+                        <td id="artigos-tabela"></td>
+                        <td id="campo-b-tabela">BRAVO</td>
+                    </tr>
+                </tbody>
+            </table>
+        
+            <button class="btn btn-success mt-1" id="btnCopiarTabela">Copiar Tabela</button>
+        </section>
+        
     </main>
 
     <footer class="bg-dark text-white text-center py-3 mt-auto">

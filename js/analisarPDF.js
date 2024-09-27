@@ -3,6 +3,15 @@ let numCpf = '';
 let numRg = '';
 let nome = '';
 
+// Função para obter a data de hoje no formato dd/mm/aaaa
+function obterDataHoje() {
+    const hoje = new Date();
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0'); // Janeiro é 0!
+    const ano = hoje.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+}
+
 // Função para remover acentos e normalizar o texto
 function normalizeText(text) {
     return text
@@ -47,13 +56,22 @@ function extractNumbers(text) {
 // Função para extrair CPF (formato específico)
 function extractCPF(text) {
     const match = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
-    return match ? match[0] : 'Não encontrado';  
+    return match ? match[0] : '';  
 }
 
 // Função para extrair datas no formato dd/mm/aaaa
 function extractDate(text) {
     const match = text.match(/\d{2}\/\d{2}\/\d{4}/);
     return match ? match[0] : '';
+}
+
+// Função para extrair os artigos da lei (somente os números)
+function extractArticles(text) {
+    const matches = text.match(/art\.\s*(\d+)/g);
+    if (!matches) return '';  // Se não houver artigos, retorna vazio
+
+    const articles = matches.map(match => match.replace(/art\.\s*/, '').trim());
+    return articles.join(' / ');
 }
 
 // Função para extrair texto do PDF usando a biblioteca pdf.js
@@ -89,8 +107,8 @@ async function extractTextFromPDF(pdf) {
     if (tipDoc) {
         nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim();
         filiacao = extractBetween(textoCompleto, 'Filiação:', 'Marcas e sinais:');
-        numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || 'Não encontrado';
-        numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || 'Não encontrado';
+        numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || '';
+        numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
         numMandado = extractBetween(textoCompleto, 'N° do Mandado:', 'Data de validade:') || 
                      extractBetween(textoCompleto, 'Nº do Mandado:', 'Data de validade:');
         numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || 
@@ -98,9 +116,12 @@ async function extractTextFromPDF(pdf) {
         numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
         dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n'));
         dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
-        artigo = extractBetween(textoCompleto, 'art.', 'Condenação:');
+        artigo = extractArticles(textoCompleto);  // Extrai os números dos artigos da lei
         condenacao = extractBetween(textoCompleto, 'Condenação:', 'Regime Prisional:');
         possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
+
+        // Atualiza a tabela com os dados extraídos
+        atualizarTabela(nome, numRg, numCpf, artigo);
     } else {
         showModalError("O arquivo não é um Mandado de Prisão, Internação ou Prisão Civil.");
         resetPDFState();  
@@ -126,13 +147,51 @@ async function extractTextFromPDF(pdf) {
     let artigoTexto = artigo ? `TIP PENAL: art. ${artigo}` : '';
     let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `CONDENAÇÃO: ${condenacao}` : '';
 
-
-
     document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} ${possuiFoto} / COPOM CAPTURA.`;
 
     // Chama a função para atualizar a contagem de caracteres
     atualizarContagemCaracteres();
 }
+
+// Função para preencher a tabela com os dados extraídos
+function atualizarTabela(nome, rg, cpf, artigos) {
+    const dataHoje = obterDataHoje();  // Obtém a data de hoje
+
+    // Estrutura da tabela a ser copiada, incluindo 5 campos vazios e "B"
+    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\tB`;
+
+    // Atualiza as células da tabela
+    document.getElementById('nome-tabela').textContent = nome || '';
+    document.getElementById('rg-tabela').textContent = rg || '';
+    document.getElementById('cpf-tabela').textContent = cpf || '';
+    document.getElementById('artigos-tabela').textContent = artigos || '';
+
+    // Exibe a tabela
+    const sectionTabela = document.getElementById('section-tabela');
+    sectionTabela.classList.remove('d-none');
+}
+
+// Função para copiar a tabela
+document.getElementById('btnCopiarTabela').addEventListener('click', function() {
+    const nome = document.getElementById('nome-tabela').textContent;
+    const rg = document.getElementById('rg-tabela').textContent;
+    const cpf = document.getElementById('cpf-tabela').textContent;
+    const artigos = document.getElementById('artigos-tabela').textContent;
+    const dataHoje = obterDataHoje();
+
+    // Adiciona os 5 campos vazios e o campo "B" no final
+    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\tB`;
+
+    const tempInput = document.createElement('textarea');
+    tempInput.value = textoCopiado;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+
+    // Exibe um aviso flutuante de sucesso
+    mostrarAvisoFlutuante("Tabela copiada!");
+});
 
 // Evento de clique para o botão "Analisar PDF"
 document.getElementById('btnAnalisarPDF').addEventListener('click', function () {
@@ -155,8 +214,7 @@ document.getElementById('btnAnalisarPDF').addEventListener('click', function () 
     }
 });
 
-
-// Função para resetar o estado do PDF (mesmo comportamento do botão fecharPDF)
+// Função para resetar o estado do PDF
 function resetPDFState() {
     const fileInput = document.getElementById('input-file');
     const nomePdfSpan = document.getElementById('nome-pdf');
@@ -189,7 +247,6 @@ function atualizarContagemCaracteres() {
 // Adiciona um evento input ao textarea para atualizar a contagem dinamicamente
 document.getElementById('textareaResultado').addEventListener('input', atualizarContagemCaracteres);
 
-
 // Função para mostrar o aviso flutuante
 function mostrarAvisoFlutuante(mensagem) {
     const avisoFlutuante = document.getElementById('avisoFlutuante');
@@ -203,10 +260,7 @@ function mostrarAvisoFlutuante(mensagem) {
 // Função para copiar o CPF para a área de transferência sem pontos e traços
 document.getElementById('btnCopiarCPF').addEventListener('click', function() {
     if (numCpf) {
-        // Remove pontos e traços do CPF
         const cpfLimpo = numCpf.replace(/[.-]/g, '');
-        
-        // Copia o CPF limpo (sem pontos e traços) para a área de transferência
         navigator.clipboard.writeText(cpfLimpo).then(function() {
             mostrarAvisoFlutuante("CPF copiado!");
         }).catch(function(error) {
@@ -230,7 +284,6 @@ document.getElementById('btnCopiarResultado').addEventListener('click', function
 
 // Função para copiar o RG para a área de transferência, somente se for apenas números
 document.getElementById('btnCopiarRG').addEventListener('click', function() {
-    // Verifica se numRg contém apenas números e não está vazio
     if (numRg && /^\d+$/.test(numRg)) {
         navigator.clipboard.writeText(numRg).then(function() {
             mostrarAvisoFlutuante("RG copiado!");
@@ -245,14 +298,13 @@ document.getElementById('btnCopiarRG').addEventListener('click', function() {
 
 // Função para copiar o nome para a área de transferência
 document.getElementById('btnCopiarNome').addEventListener('click', function() {
-    if (nome) {  // Verifica se a variável nome contém algum valor
+    if (nome) {  
         navigator.clipboard.writeText(nome).then(function() {
-            mostrarAvisoFlutuante("Nome copiado!");  // Exibe uma mensagem de sucesso
+            mostrarAvisoFlutuante("Nome copiado!");  
         }).catch(function(error) {
-            console.error('Erro ao copiar nome: ', error);  // Exibe uma mensagem de erro no console se falhar
+            console.error('Erro ao copiar nome: ', error);
         });
     } else {
         console.error('Nome não encontrado.');
     }
 });
-
