@@ -168,14 +168,17 @@ async function extractTextFromPDF(pdf) {
 function atualizarTabela(nome, rg, cpf, artigos) {
     const dataHoje = obterDataHoje();  // Obtém a data de hoje
 
+    // Extrai somente o número do artigo (ignorando "Lei: xxxx")
+    const artigoExibido = artigos ? artigos.split(',')[1]?.trim().replace('Art.:', '').trim() : ''; 
+
     // Estrutura da tabela a ser copiada, incluindo 5 campos vazios e "B"
-    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\tB`;
+    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigoExibido}\tB`;
 
     // Atualiza as células da tabela
     document.getElementById('nome-tabela').textContent = nome || '';
     document.getElementById('rg-tabela').textContent = rg || '';
     document.getElementById('cpf-tabela').textContent = cpf || '';
-    document.getElementById('artigos-tabela').textContent = artigos || '';
+    document.getElementById('artigos-tabela').textContent = artigoExibido || '';
 
     // Exibe a tabela
     const sectionTabela = document.getElementById('section-tabela');
