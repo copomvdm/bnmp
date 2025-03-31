@@ -65,15 +65,33 @@ function extractDate(text) {
     return match ? match[0] : '';
 }
 
-// Função para extrair os artigos da lei (somente os números) sem duplicatas
+// Função para extrair os artigos da lei após "Tipificação Penal:" ou "Artigo:" (somente os números) sem duplicatas
 function extractArticles(text) {
-    const matches = text.match(/(?:artigo)\s*(\d+)/gi);  // Procura por "artigo" seguido de número
-    if (!matches) return '';  // Se não houver artigos, retorna vazio
+    // Busca a seção após "Tipificação Penal:" ou "Artigo:", usando expressão regular para capturar os artigos
+    const tipificacaoMatch = text.match(/Tipificação Penal:\s*(.*?)(Artigo|$)/i);
+    const artigoMatch = text.match(/Artigo:\s*(\d+)/i);
+
+    let articles = [];
+
+    if (tipificacaoMatch) {
+        // Extrai os artigos após "Tipificação Penal:"
+        const artigosTipificacao = tipificacaoMatch[1].match(/\d+/g);
+        if (artigosTipificacao) {
+            articles = [...articles, ...artigosTipificacao];
+        }
+    }
+
+    if (artigoMatch) {
+        // Extrai o artigo após "Artigo:"
+        articles.push(artigoMatch[1]);
+    }
 
     // Remove duplicatas usando Set
-    const articles = [...new Set(matches.map(match => match.replace(/(?:artigo)\s*/, '').trim()))];
+    articles = [...new Set(articles)];
+
     return articles.join(' / ');
 }
+
 
 
 
