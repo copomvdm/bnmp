@@ -138,21 +138,6 @@
         <p>Atualizado em 27/09/2024</p>
     </footer>
 
-    <script>
-        // Verificar se o usuário está autenticado
-        function checkAuthentication() {
-            // Verifique se o localStorage contém a chave "authenticated"
-            if (localStorage.getItem("authenticated") !== "true") {
-                // Se não estiver autenticado, redirecione para a página de login
-                window.location.href = "https://coltseals.github.io/eqb/login.html";
-            }
-        }
-        
-        // Chamar a função de verificação de autenticação ao carregar a página
-        checkAuthentication();
-
-    </script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./js/analisarPDF.js"></script>
