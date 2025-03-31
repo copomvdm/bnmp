@@ -67,13 +67,14 @@ function extractDate(text) {
 
 // Função para extrair os artigos da lei (somente os números) sem duplicatas
 function extractArticles(text) {
-    const matches = text.match(/art\.\s*(\d+)/g);
+    const matches = text.match(/(?:art\.|artigo)\s*(\d+)/gi);  // Procura por "art." ou "artigo" seguido de número
     if (!matches) return '';  // Se não houver artigos, retorna vazio
 
     // Remove duplicatas usando Set
-    const articles = [...new Set(matches.map(match => match.replace(/art\.\s*/, '').trim()))];
+    const articles = [...new Set(matches.map(match => match.replace(/(?:art\.|artigo)\s*/, '').trim()))];
     return articles.join(' / ');
 }
+
 
 
 // Função para extrair texto do PDF usando a biblioteca pdf.js
