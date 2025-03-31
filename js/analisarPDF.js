@@ -157,9 +157,10 @@ condenacao = condenacao.trim();
     });
 
     let artigoTexto = artigo ? `TIP PENAL: ${artigo}` : '';
-    let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `CONDENAÇÃO: ${condenacao}` : '';
+    let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `PENA IMPOSTA: ${condenacao}` : ''; // Condicional para remover a frase
 
-    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, - PENA IMPOSTA: ${condenacao} ${possuiFoto} / COPOM CAPTURA.`;
+    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} ${possuiFoto} / COPOM CAPTURA.`;
+    
 
 
     // Chama a função para atualizar a contagem de caracteres
