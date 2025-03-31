@@ -112,6 +112,7 @@ async function extractTextFromPDF(pdf) {
     let artigo = '';
     let condenacao = '';
     let possuiFoto = '';
+    let penaRestante '';
 
     tipDoc = identificarTipoMandado(textoCompleto);
     
@@ -129,6 +130,7 @@ async function extractTextFromPDF(pdf) {
         dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
         artigo = extractLawAndArticle(textoCompleto);  // Extrai a Lei e o Artigo corretamente
         condenacao = extractBetween(textoCompleto, 'Condenação:', 'Regime Prisional:');
+        penaRestante = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:').trim();
         possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
 
         // Atualiza a tabela com os dados extraídos
@@ -158,7 +160,8 @@ async function extractTextFromPDF(pdf) {
     let artigoTexto = artigo ? `TIP PENAL: ${artigo}` : '';
     let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `CONDENAÇÃO: ${condenacao}` : '';
 
-    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} ${possuiFoto} / COPOM CAPTURA.`;
+    document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} - PENA IMPOSTA: ${penaRestante} ${possuiFoto} / COPOM CAPTURA.`;
+
 
     // Chama a função para atualizar a contagem de caracteres
     atualizarContagemCaracteres();
