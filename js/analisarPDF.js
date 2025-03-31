@@ -128,7 +128,8 @@ async function extractTextFromPDF(pdf) {
         dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
         dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
         artigo = extractLawAndArticle(textoCompleto);  // Extrai a Lei e o Artigo corretamente
-        condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:').trim();
+        condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
+condenacao = condenacao.trim();
         possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
 
         // Atualiza a tabela com os dados extraídos
