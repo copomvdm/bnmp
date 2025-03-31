@@ -74,8 +74,8 @@ function extractLawAndArticle(text) {
         const lei = tipificacaoMatch[1];  // A Lei
         const artigo = tipificacaoMatch[2];  // O Artigo
         
-        // Retorna no formato "Lei: xxxx, Artigo: xxxx"
-        return `Lei: ${lei}, Artigo: ${artigo}`;
+        // Retorna no formato "Lei: xxxx, Art.: xxxx"
+        return `Lei: ${lei}, Art.: ${artigo}`;
     } else {
         return '';  // Caso não encontre o padrão, retorna vazio
     }
