@@ -116,7 +116,7 @@ async function extractTextFromPDF(pdf) {
         numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || 
                       extractBetween(textoCompleto, 'N° do processo:', 'Órgão Judicial:');
         numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
-        dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n'));
+        dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
         dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
         artigo = extractArticles(textoCompleto);  // Extrai os números dos artigos da lei
         condenacao = extractBetween(textoCompleto, 'Condenação:', 'Regime Prisional:');
