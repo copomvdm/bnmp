@@ -65,31 +65,20 @@ function extractDate(text) {
     return match ? match[0] : '';
 }
 
-// Função para extrair os artigos da lei após "Tipificação Penal:" ou "Artigo:" (somente os números) sem duplicatas
-function extractArticles(text) {
-    // Busca a seção após "Tipificação Penal:" ou "Artigo:", usando expressão regular para capturar os artigos
-    const tipificacaoMatch = text.match(/Tipificação Penal:\s*(.*?)(Artigo|$)/i);
-    const artigoMatch = text.match(/Artigo:\s*(\d+)/i);
-
-    let articles = [];
+// Função para extrair a Lei e o Artigo após "Tipificação Penal:", excluindo parágrafos e incisos
+function extractLawAndArticle(text) {
+    // Busca a seção após "Tipificação Penal:", capturando a Lei e o Artigo
+    const tipificacaoMatch = text.match(/Tipificação Penal:\s*Lei:\s*(\d+)\s*Artigo:\s*(\d+)/i);
 
     if (tipificacaoMatch) {
-        // Extrai os artigos após "Tipificação Penal:"
-        const artigosTipificacao = tipificacaoMatch[1].match(/\d+/g);
-        if (artigosTipificacao) {
-            articles = [...articles, ...artigosTipificacao];
-        }
+        const lei = tipificacaoMatch[1];  // A Lei
+        const artigo = tipificacaoMatch[2];  // O Artigo
+        
+        // Retorna no formato "Lei: xxxx, Artigo: xxxx"
+        return `Lei: ${lei}, Artigo: ${artigo}`;
+    } else {
+        return '';  // Caso não encontre o padrão, retorna vazio
     }
-
-    if (artigoMatch) {
-        // Extrai o artigo após "Artigo:"
-        articles.push(artigoMatch[1]);
-    }
-
-    // Remove duplicatas usando Set
-    articles = [...new Set(articles)];
-
-    return articles.join(' / ');
 }
 
 
@@ -138,7 +127,7 @@ async function extractTextFromPDF(pdf) {
         numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
         dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
         dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
-        artigo = extractArticles(textoCompleto);  // Extrai os números dos artigos da lei
+        artigo = extractLawAndArticle(textoCompleto);  // Extrai a Lei e o Artigo corretamente
         condenacao = extractBetween(textoCompleto, 'Condenação:', 'Regime Prisional:');
         possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
 
