@@ -28,22 +28,25 @@ function identificarTipoMandado(text) {
         return 'mandado de prisão civil';
     } else if (normalizedText.includes('mandado de internacao')) {
         return 'mandado de internação';
+    } else if (normalizedText.includes('mandado de recaptura')) {
+        return 'mandado de recaptura';
     } else if (normalizedText.includes('mandado de prisao')) {
         return 'mandado de prisão';
     }
 
-    return ''; 
+    return '';
 }
+
 
 // Função corrigida para extrair o nome corretamente
 function extractBetween(text, startText, endText) {
     const startIndex = text.indexOf(startText);
-    if (startIndex === -1) return '';  
-    
+    if (startIndex === -1) return '';
+
     const actualStartIndex = startIndex + startText.length;
     const endIndex = text.indexOf(endText, actualStartIndex);
 
-    if (endIndex === -1) return '';  
+    if (endIndex === -1) return '';
 
     return text.slice(actualStartIndex, endIndex).trim();
 }
@@ -56,7 +59,7 @@ function extractNumbers(text) {
 // Função para extrair CPF (formato específico)
 function extractCPF(text) {
     const match = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
-    return match ? match[0] : '';  
+    return match ? match[0] : '';
 }
 
 // Função para extrair datas no formato dd/mm/aaaa
@@ -73,7 +76,7 @@ function extractLawAndArticle(text) {
     if (tipificacaoMatch) {
         const lei = tipificacaoMatch[1];  // A Lei
         const artigo = tipificacaoMatch[2];  // O Artigo
-        
+
         // Retorna no formato "Lei: xxxx, Art.: xxxx"
         return `Lei: ${lei}, Art.: ${artigo}`;
     } else {
@@ -87,7 +90,7 @@ function extractLawAndArticle(text) {
 
 // Função para extrair texto do PDF usando a biblioteca pdf.js
 async function extractTextFromPDF(pdf) {
-    let textoCompleto = ''; 
+    let textoCompleto = '';
 
     const pdfDoc = await pdfjsLib.getDocument(URL.createObjectURL(pdf)).promise;
     const numPages = pdfDoc.numPages;
@@ -95,12 +98,12 @@ async function extractTextFromPDF(pdf) {
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
         const textContent = await page.getTextContent();
-        
+
         const pageText = textContent.items.map(item => item.str).join(' ');
-        textoCompleto += pageText + '\n'; 
+        textoCompleto += pageText + '\n';
     }
 
-    console.log(textoCompleto);  
+    console.log(textoCompleto);
 
     let tipDoc = '';
     let filiacao = '';
@@ -114,31 +117,44 @@ async function extractTextFromPDF(pdf) {
     let possuiFoto = '';
 
     tipDoc = identificarTipoMandado(textoCompleto);
-    
-    if (tipDoc) {
-        nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
-        filiacao = extractBetween(textoCompleto, 'Filiação:', 'Marcas e sinais:');
-        numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || '';
-        numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
-        numMandado = extractBetween(textoCompleto, 'N° do Mandado:', 'Data de validade:') || 
-                     extractBetween(textoCompleto, 'Nº do Mandado:', 'Data de validade:');
-        numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || 
-                      extractBetween(textoCompleto, 'N° do processo:', 'Órgão Judicial:');
-        numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
-        dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
-        dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
-        artigo = extractLawAndArticle(textoCompleto);  // Extrai a Lei e o Artigo corretamente
-        condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
-condenacao = condenacao.trim();
-        possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
 
-        // Atualiza a tabela com os dados extraídos
+    if (tipDoc) {
+        if (tipDoc === 'mandado de recaptura') {
+            nome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'CPF:').trim().toUpperCase();
+            numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Nome Social:')) || '';
+            numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
+            numMandado = extractBetween(textoCompleto, 'N° do Documento:', 'Data de validade:') || '';
+            numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || '';
+            numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
+            dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n')) || '';
+            dataValidade = extractBetween(textoCompleto, 'Data de validade:', 'Pessoa Procurada:')?.trim() || '';
+            artigo = extractLawAndArticle(textoCompleto);
+        } else {
+            // Mantém a lógica atual para os outros mandados
+            nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
+            filiacao = extractBetween(textoCompleto, 'Filiação:', 'Marcas e sinais:');
+            numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || '';
+            numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
+            numMandado = extractBetween(textoCompleto, 'N° do Mandado:', 'Data de validade:') ||
+                extractBetween(textoCompleto, 'Nº do Mandado:', 'Data de validade:');
+            numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') ||
+                extractBetween(textoCompleto, 'N° do processo:', 'Órgão Judicial:');
+            numRJI = extractBetween(textoCompleto, 'RJI:', 'Alcunha:');
+            dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
+            dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
+            artigo = extractLawAndArticle(textoCompleto);
+            condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
+            condenacao = condenacao.trim();
+        }
+
+        possuiFoto = document.getElementById('checkPossuiFotoPDF').checked ? 'POSSUI FOTO' : '';
         atualizarTabela(nome, numRg, numCpf, artigo);
     } else {
         showModalError("O arquivo não é um Mandado de Prisão, Internação ou Prisão Civil.");
-        resetPDFState();  
+        resetPDFState();
         return;
     }
+
 
     console.log({
         tipDoc,
@@ -160,7 +176,7 @@ condenacao = condenacao.trim();
     let condenacaoTexto = (condenacao && condenacao.trim().toLowerCase() !== 'null') ? `PENA IMPOSTA: ${condenacao}` : ''; // Condicional para remover a frase
 
     document.getElementById('textareaResultado').value = `CONSTA ${tipDoc} VIA BNMP CONTRA: ${nome}, RG: ${numRg}, CPF: ${numCpf}, - MANDADO Nº: ${numMandado}, - PROCESSO Nº: ${numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${dataExp}, - VÁLIDO ATÉ: ${dataValidade}, ${condenacaoTexto} ${possuiFoto} / COPOM CAPTURA.`;
-    
+
 
 
     // Chama a função para atualizar a contagem de caracteres
@@ -172,7 +188,7 @@ function atualizarTabela(nome, rg, cpf, artigos) {
     const dataHoje = obterDataHoje();  // Obtém a data de hoje
 
     // Extrai somente o número do artigo (ignorando "Lei: xxxx")
-    const artigoExibido = artigos ? artigos.split(',')[1]?.trim().replace('Art.:', '').trim() : ''; 
+    const artigoExibido = artigos ? artigos.split(',')[1]?.trim().replace('Art.:', '').trim() : '';
 
     // Estrutura da tabela a ser copiada, incluindo 5 campos vazios e "B"
     const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigoExibido}\tB`;
@@ -189,7 +205,7 @@ function atualizarTabela(nome, rg, cpf, artigos) {
 }
 
 // Função para copiar a tabela
-document.getElementById('btnCopiarTabela').addEventListener('click', function() {
+document.getElementById('btnCopiarTabela').addEventListener('click', function () {
     const nome = document.getElementById('nome-tabela').textContent;
     const rg = document.getElementById('rg-tabela').textContent;
     const cpf = document.getElementById('cpf-tabela').textContent;
@@ -212,10 +228,10 @@ document.getElementById('btnCopiarTabela').addEventListener('click', function() 
 
 // Evento de clique para o botão "Analisar PDF"
 document.getElementById('btnAnalisarPDF').addEventListener('click', function () {
-    console.clear();  
+    console.clear();
 
     const inputFile = document.getElementById('input-file');
-    const file = inputFile.files[0];  
+    const file = inputFile.files[0];
 
     if (file && file.type === "application/pdf") {
         extractTextFromPDF(file);  // Extrai o texto do PDF
@@ -239,15 +255,15 @@ function resetPDFState() {
     const btnAnalisarPDF = document.getElementById('btnAnalisarPDF');
     const possuiFotoPDF = document.getElementById('possuiFotoPDF');
     const divCarregarPDF = document.getElementById('div-carregarPDF');
-    const textareaResultado = document.getElementById('textareaResultado');  
+    const textareaResultado = document.getElementById('textareaResultado');
 
     fileInput.value = '';
     nomePdfSpan.textContent = "Nenhum ficheiro selecionado";
     infoPdfDiv.classList.add('d-none');
     btnAnalisarPDF.classList.add('d-none');
     possuiFotoPDF.classList.add('d-none');
-    divCarregarPDF.classList.remove('d-none'); 
-    textareaResultado.value = '';  
+    divCarregarPDF.classList.remove('d-none');
+    textareaResultado.value = '';
     console.clear();
 }
 
@@ -275,12 +291,12 @@ function mostrarAvisoFlutuante(mensagem) {
 }
 
 // Função para copiar o CPF para a área de transferência sem pontos e traços
-document.getElementById('btnCopiarCPF').addEventListener('click', function() {
+document.getElementById('btnCopiarCPF').addEventListener('click', function () {
     if (numCpf) {
         const cpfLimpo = numCpf.replace(/[.-]/g, '');
-        navigator.clipboard.writeText(cpfLimpo).then(function() {
+        navigator.clipboard.writeText(cpfLimpo).then(function () {
             mostrarAvisoFlutuante("CPF copiado!");
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.error('Erro ao copiar CPF: ', error);
         });
     } else {
@@ -291,7 +307,7 @@ document.getElementById('btnCopiarCPF').addEventListener('click', function() {
 // Função para copiar o resultado do textarea
 document.getElementById('btnCopiarResultado').addEventListener('click', function () {
     const textarea = document.getElementById('textareaResultado');
-    
+
     navigator.clipboard.writeText(textarea.value.toUpperCase()).then(function () {
         mostrarAvisoFlutuante("Texto copiado!");
     }).catch(function (error) {
@@ -300,11 +316,11 @@ document.getElementById('btnCopiarResultado').addEventListener('click', function
 });
 
 // Função para copiar o RG para a área de transferência, somente se for apenas números
-document.getElementById('btnCopiarRG').addEventListener('click', function() {
+document.getElementById('btnCopiarRG').addEventListener('click', function () {
     if (numRg && /^\d+$/.test(numRg)) {
-        navigator.clipboard.writeText(numRg).then(function() {
+        navigator.clipboard.writeText(numRg).then(function () {
             mostrarAvisoFlutuante("RG copiado!");
-        }).catch(function(error) {
+        }).catch(function (error) {
             console.error('Erro ao copiar RG: ', error);
         });
     } else {
@@ -314,11 +330,11 @@ document.getElementById('btnCopiarRG').addEventListener('click', function() {
 });
 
 // Função para copiar o nome para a área de transferência
-document.getElementById('btnCopiarNome').addEventListener('click', function() {
-    if (nome) {  
-        navigator.clipboard.writeText(nome).then(function() {
-            mostrarAvisoFlutuante("Nome copiado!");  
-        }).catch(function(error) {
+document.getElementById('btnCopiarNome').addEventListener('click', function () {
+    if (nome) {
+        navigator.clipboard.writeText(nome).then(function () {
+            mostrarAvisoFlutuante("Nome copiado!");
+        }).catch(function (error) {
             console.error('Erro ao copiar nome: ', error);
         });
     } else {
