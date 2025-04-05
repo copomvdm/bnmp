@@ -70,19 +70,30 @@ function extractDate(text) {
 
 // Função para extrair a Lei e o Artigo após "Tipificação Penal:", excluindo parágrafos e incisos
 function extractLawAndArticle(text) {
-    // Busca a seção após "Tipificação Penal:", capturando a Lei e o Artigo
-    const tipificacaoMatch = text.match(/Tipificação Penal:\s*Lei:\s*(\d+)\s*Artigo:\s*(\d+)/i);
+    // Captura o trecho entre "Tipificação Penal:" e "Identificação biométrica:"
+    const match = text.match(/Tipificação Penal:(.*?)Identificação biométrica:/s);
 
-    if (tipificacaoMatch) {
-        const lei = tipificacaoMatch[1];  // A Lei
-        const artigo = tipificacaoMatch[2];  // O Artigo
+    if (!match) return '';
 
-        // Retorna no formato "Lei: xxxx, Art.: xxxx"
-        return `Lei: ${lei}, Art.: ${artigo}`;
-    } else {
-        return '';  // Caso não encontre o padrão, retorna vazio
+    const trecho = match[1];
+
+    // Extrai a lei (assumimos que todas são da mesma Lei)
+    const leiMatch = trecho.match(/Lei:\s*(\d+)/);
+    const lei = leiMatch ? leiMatch[1] : '';
+
+    // Extrai todos os artigos (inclusive como 147A ou com letras)
+    const artigosEncontrados = [...trecho.matchAll(/Artigo:\s*(\d+\w?)/g)];
+
+    // Cria um Set para remover duplicatas
+    const artigosUnicos = [...new Set(artigosEncontrados.map(m => m[1]))];
+
+    if (lei && artigosUnicos.length > 0) {
+        return `Lei: ${lei}, Art.: ${artigosUnicos.join(', ')}`;
     }
+
+    return '';
 }
+
 
 
 
@@ -187,22 +198,27 @@ async function extractTextFromPDF(pdf) {
 function atualizarTabela(nome, rg, cpf, artigos) {
     const dataHoje = obterDataHoje();  // Obtém a data de hoje
 
-    // Extrai somente o número do artigo (ignorando "Lei: xxxx")
-    const artigoExibido = artigos ? artigos.split(',')[1]?.trim().replace('Art.:', '').trim() : '';
+    // Separa os artigos da parte "Lei: xxxx"
+    let artigosSomente = '';
+    if (artigos) {
+        const match = artigos.match(/Art\.\:\s*(.+)/);
+        artigosSomente = match ? match[1] : '';
+    }
 
     // Estrutura da tabela a ser copiada, incluindo 5 campos vazios e "B"
-    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigoExibido}\tB`;
+    const textoCopiado = `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigosSomente}\tB`;
 
     // Atualiza as células da tabela
     document.getElementById('nome-tabela').textContent = nome || '';
     document.getElementById('rg-tabela').textContent = rg || '';
     document.getElementById('cpf-tabela').textContent = cpf || '';
-    document.getElementById('artigos-tabela').textContent = artigoExibido || '';
+    document.getElementById('artigos-tabela').textContent = artigosSomente || '';
 
     // Exibe a tabela
     const sectionTabela = document.getElementById('section-tabela');
     sectionTabela.classList.remove('d-none');
 }
+
 
 // Função para copiar a tabela
 document.getElementById('btnCopiarTabela').addEventListener('click', function () {
