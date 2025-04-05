@@ -140,6 +140,8 @@ async function extractTextFromPDF(pdf) {
             dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n')) || '';
             dataValidade = extractBetween(textoCompleto, 'Data de validade:', 'Pessoa Procurada:')?.trim() || '';
             artigo = extractLawAndArticle(textoCompleto);
+            condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
+            condenacao = condenacao.trim();
         } else {
             // Mantém a lógica atual para os outros mandados
             nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
