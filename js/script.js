@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmacaoModalTexto = document.getElementById('confirmacao-modal-texto');
     const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao');
     const selectEquipe = document.getElementById('select-equipe');
-    const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela'); 
+    const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela');
 
     // Modais
     const modalVerificarProcessoEl = document.getElementById('modalVerificarProcesso');
@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const MAX_FILES = 10;
     let fileIdParaExcluir = null;
     const EQUIPE_STORAGE_KEY = 'equipePadrao';
-    let analiseFeitaStatus = {}; 
-    
+    let analiseFeitaStatus = {};
+
     const carregarEquipePadrao = () => {
         const equipeSalva = localStorage.getItem(EQUIPE_STORAGE_KEY);
         if (equipeSalva) {
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     carregarEquipePadrao();
-    
+
     const preventDefaults = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         newFilesArray.forEach(file => {
             const isDuplicate = currentManagedFiles.some(existingFile => existingFile.name === file.name);
-            
+
             if (isDuplicate) {
                 ignoredDuplicates.push(file.name);
             } else if (file.type === "application/pdf") {
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         updateFileUI();
     };
-    
+
     function updateFileUI() {
         if (currentManagedFiles.length > MAX_FILES) {
             showModalError(`O limite é de ${MAX_FILES} arquivos. A sua seleção foi ajustada para o limite.`);
@@ -108,40 +108,40 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const pdfFiles = currentManagedFiles;
-        
+
         const dataTransfer = new DataTransfer();
         pdfFiles.forEach(file => dataTransfer.items.add(file));
         inputFile.files = dataTransfer.files;
-        
-        listaArquivosDiv.innerHTML = ''; 
-        if(pdfFiles.length > 0) {
+
+        listaArquivosDiv.innerHTML = '';
+        if (pdfFiles.length > 0) {
             listaArquivosDiv.className = 'row g-3 w-100 justify-content-center';
-    
+
             pdfFiles.forEach((file, index) => {
                 const col = document.createElement('div');
                 col.className = 'col-lg-3 col-md-4 col-sm-6';
                 col.dataset.fileId = index;
-    
+
                 const card = document.createElement('div');
                 card.className = 'card h-100 text-center file-card';
-                
+
                 const cardBody = document.createElement('div');
                 cardBody.className = 'card-body d-flex flex-column justify-content-center align-items-center p-2';
-    
+
                 const closeButton = document.createElement('button');
                 closeButton.className = 'btn-close-file';
                 closeButton.setAttribute('aria-label', 'Remover Arquivo');
                 closeButton.innerHTML = '&times;';
                 card.appendChild(closeButton);
-    
+
                 const icon = document.createElement('i');
                 icon.className = 'bi bi-file-earmark-pdf-fill fs-1 text-danger';
-    
+
                 const fileName = document.createElement('p');
                 fileName.className = 'card-text small mt-2 mb-0';
                 fileName.style.wordBreak = 'break-all';
                 fileName.textContent = file.name;
-    
+
                 cardBody.appendChild(icon);
                 cardBody.appendChild(fileName);
                 card.appendChild(cardBody);
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
             procurarArquivoLabel.classList.remove('d-none');
         }
     }
-    
+
     const resetUI = () => {
         currentManagedFiles = [];
         currentAnalysisData = [];
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function removerArquivoEAnalise(fileId) {
         const scrollY = window.scrollY;
         const idToRemove = parseInt(fileId, 10);
-    
+
         const newAnaliseFeitaStatus = {};
         let newIndex = 0;
         for (let i = 0; i < currentManagedFiles.length; i++) {
@@ -197,19 +197,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         analiseFeitaStatus = newAnaliseFeitaStatus;
-    
+
         currentManagedFiles.splice(idToRemove, 1);
         currentAnalysisData.splice(idToRemove, 1);
-    
+
         if (currentManagedFiles.length === 0) {
             resetUI();
             return;
         }
-    
+
         updateFileUI();
-        
-        await analisarErenderTodosOsResultados(false); 
-    
+
+        await analisarErenderTodosOsResultados(false);
+
         window.scrollTo({ top: scrollY, behavior: 'instant' });
     }
 
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         }
-        
+
         if (mostrarModal && mensagemHTML) {
             if (mensagemHTML.endsWith('<hr>')) mensagemHTML = mensagemHTML.slice(0, -4);
             modalProcessoConteudo.innerHTML = mensagemHTML;
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         }
-        
+
         if (mostrarModal && mensagemHTML) {
             if (mensagemHTML.endsWith('<hr>')) mensagemHTML = mensagemHTML.slice(0, -4);
             modalMaeConteudo.innerHTML = mensagemHTML;
@@ -288,20 +288,20 @@ document.addEventListener('DOMContentLoaded', function () {
     async function analisarErenderTodosOsResultados(fazerAnaliseCompleta = true) {
         resultadosContainer.innerHTML = '';
         tabelaCorpo.innerHTML = '';
-    
+
         if (fazerAnaliseCompleta) {
             btnAnalisarPDF.disabled = true;
             btnAnalisarPDF.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analisando...`;
-    
+
             // Extrai dados de todos os arquivos em paralelo
-            const analysisPromises = currentManagedFiles.map(file => 
+            const analysisPromises = currentManagedFiles.map(file =>
                 extractDataFromPDF(file).then(data => ({ data, file }))
             );
             const results = await Promise.all(analysisPromises);
-    
+
             let validResults = [];
             let arquivosInvalidos = [];
-    
+
             results.forEach(result => {
                 if (result.data) {
                     // Associa o arquivo original aos dados extraídos
@@ -310,12 +310,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     arquivosInvalidos.push(result.file.name);
                 }
             });
-    
+
             // --- INÍCIO: LÓGICA DE VERIFICAÇÃO DE DUPLICATAS (NOME + CPF) ---
             const seen = new Map();
             const uniqueAnalyses = [];
             const ignoredDuplicates = [];
-    
+
             validResults.forEach(data => {
                 // A duplicata é considerada apenas se ambos, nome e CPF, existirem e forem iguais
                 if (data.nome && data.numCpf) {
@@ -331,15 +331,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     uniqueAnalyses.push(data);
                 }
             });
-    
+
             // Atualiza os arrays principais com os dados únicos e válidos
             currentAnalysisData = uniqueAnalyses;
             currentManagedFiles = currentAnalysisData.map(analysis => analysis.originalFile);
-    
+
             // Atualiza a UI para remover visualmente os arquivos inválidos/duplicados
-            updateFileUI(); 
+            updateFileUI();
             // --- FIM: LÓGICA DE VERIFICAÇÃO DE DUPLICATAS ---
-    
+
             // --- Consolidação de mensagens para o modal ---
             let modalMessages = [];
             if (arquivosInvalidos.length > 0) {
@@ -352,34 +352,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 showModalError(modalMessages.join('<hr class="my-3">'));
             }
         }
-    
+
         if (currentAnalysisData.length === 0) {
             sectionTabela.classList.add('d-none');
             btnAnalisarPDF.disabled = false;
             btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
             return;
         }
-    
+
         currentAnalysisData.forEach((dados, index) => {
             criarCardResultado(dados, index);
             adicionarLinhaTabela(dados, index);
         });
-    
+
         sectionTabela.classList.remove('d-none');
-    
+
         if (fazerAnaliseCompleta) {
             const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
             if (primeiroResultado) {
-                primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
-        
+
         btnAnalisarPDF.disabled = false;
         btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
-        
+
         verificarProcessosDuplicados(currentAnalysisData, fazerAnaliseCompleta);
         verificarMaesDuplicadas(currentAnalysisData, fazerAnaliseCompleta);
-    
+
         inicializarTooltips();
     }
 
@@ -388,19 +388,19 @@ document.addEventListener('DOMContentLoaded', function () {
     ['dragenter', 'dragover'].forEach(eventName => dragArea.addEventListener(eventName, highlight, false));
     ['dragleave', 'drop'].forEach(eventName => dragArea.addEventListener(eventName, unhighlight, false));
     dragArea.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files), false);
-    
+
     inputFile.addEventListener('change', (e) => handleFiles(e.target.files));
     fecharPdfBtn.addEventListener('click', resetUI);
-    btnLimparSelecaoTabela.addEventListener('click', resetUI); 
+    btnLimparSelecaoTabela.addEventListener('click', resetUI);
 
-    listaArquivosDiv.addEventListener('click', function(e) {
+    listaArquivosDiv.addEventListener('click', function (e) {
         const closeButton = e.target.closest('.btn-close-file');
         if (closeButton) {
             const fileId = e.target.closest('[data-file-id]').dataset.fileId;
             abrirModalConfirmacao(fileId, currentManagedFiles[fileId]?.name);
         }
     });
-    
+
     btnConfirmarExclusao.addEventListener('click', () => {
         if (fileIdParaExcluir !== null) {
             removerArquivoEAnalise(fileIdParaExcluir);
@@ -418,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // *** NOVO CÓDIGO ADICIONADO ***
     // Adiciona um ouvinte para o duplo clique na tabela para navegar até o card.
-    tabelaCorpo.addEventListener('dblclick', function(e) {
+    tabelaCorpo.addEventListener('dblclick', function (e) {
         const targetCell = e.target.closest('td');
 
         // Verifica se o clique duplo foi na primeira célula (coluna do nome)
@@ -429,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const resultCard = document.querySelector(`.section-resultado[data-analysis-id="${analysisId}"]`);
                 if (resultCard) {
                     // Rola a tela suavemente até o card correspondente
-                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                     // Adiciona um destaque visual temporário ao card
                     const cardBody = resultCard.querySelector('.card-body');
@@ -437,11 +437,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         cardBody.style.transition = 'background-color 0.2s ease-in-out';
                         cardBody.style.backgroundColor = '#e9ecef'; // Cor de destaque
                         setTimeout(() => {
-                            // Remove a cor de destaque, respeitando a cor de 'feito' se já estiver aplicada
-                            if (!cardBody.classList.contains('talao-gerado')) {
+                            // Verifica se o card está marcado como 'feito'
+                            if (cardBody.classList.contains('talao-gerado')) {
+                                // Se estiver 'feito', restaura explicitamente a cor de fundo verde
+                                // definida na sua folha de estilo (style.css).
+                                cardBody.style.backgroundColor = '#d1e7dd';
+                            } else {
+                                // Se não estiver 'feito', simplesmente remove o estilo de destaque,
+                                // fazendo com que ele volte à cor padrão.
                                 cardBody.style.backgroundColor = '';
                             }
-                        }, 1200); 
+                        }, 1600);
                     }
                 }
             }
@@ -451,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function criarCardResultado(data, id) {
         const clone = templateResultado.content.cloneNode(true);
-        
+
         const resultadoSection = clone.querySelector('.section-resultado');
         resultadoSection.dataset.analysisId = id;
 
@@ -460,12 +466,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const cardTitle = clone.querySelector('.card-title-filename');
         const collapseWrapper = clone.querySelector('.collapse');
         const btnCloseResultCard = clone.querySelector('.btn-close-result-card');
-        
+
         const collapseId = `collapse-body-${id}`;
         collapseWrapper.id = collapseId;
         collapseTrigger.setAttribute('data-bs-target', `#${collapseId}`);
         collapseTrigger.setAttribute('aria-controls', collapseId);
-        
+
         cardTitle.textContent = `Resultado do mandado de ${data.nome}`;
 
         const chevronIcon = collapseTrigger.querySelector('.collapse-icon');
@@ -485,10 +491,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         checkFoto.id = uniqueId;
         labelFoto.setAttribute('for', uniqueId);
-        
+
         const contagem = clone.querySelector('.span-contagem');
         const btnCopiarResumo = clone.querySelector('.btn-copiar-resumo');
-        
+
         const rgTexto = data.numRg ? `, <strong>RG:</strong> ${data.numRg}` : '';
         const cpfTexto = data.numCpf ? `, <strong>CPF:</strong> ${data.numCpf}` : '';
 
@@ -512,19 +518,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const textoBase = parts.join(', ').replace(/, -/g, ' -') + ' / COPOM CAPTURA.';
-        
+
         editableDiv.innerHTML = textoBase;
         contagem.textContent = `${editableDiv.innerText.length} caracteres`;
-        
+
         editableDiv.addEventListener('input', () => {
             contagem.textContent = `${editableDiv.innerText.length} caracteres`;
         });
-        
-        checkFoto.addEventListener('change', function() {
+
+        checkFoto.addEventListener('change', function () {
             let currentHtml = editableDiv.innerHTML;
             const textoFoto = ' POSSUI FOTO';
             const textoFinal = ' / COPOM CAPTURA.';
-            
+
             currentHtml = currentHtml.replace(textoFoto, '');
 
             if (this.checked) {
@@ -533,11 +539,11 @@ document.addEventListener('DOMContentLoaded', function () {
             editableDiv.innerHTML = currentHtml;
             contagem.textContent = `${editableDiv.innerText.length} caracteres`;
         });
-        
+
         btnCopiarResumo.addEventListener('click', () => {
             navigator.clipboard.writeText(editableDiv.innerText.toUpperCase()).then(() => showToast("Resumo copiado!"));
         });
-        
+
         const infoBadgeNome = clone.querySelector('.info-badge-nome');
         const infoBadgeCpf = clone.querySelector('.info-badge-cpf');
         const infoBadgeRg = clone.querySelector('.info-badge-rg');
@@ -566,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 navigator.clipboard.writeText(data.numRg).then(() => showToast("RG copiado!"));
             });
         }
-        
+
         if (data.mae) {
             infoBadgeMae.querySelector('.info-badge-value').textContent = data.mae;
             infoBadgeMae.classList.remove('d-none');
@@ -586,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGerarTalao.classList.replace('btn-outline-success', 'btn-success');
         }
 
-        btnGerarTalao.addEventListener('click', function() {
+        btnGerarTalao.addEventListener('click', function () {
             const tableRow = tabelaCorpo.querySelector(`[data-analysis-id="${id}"]`);
 
             cardBody.classList.toggle('talao-gerado');
@@ -609,7 +615,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         resultadosContainer.appendChild(clone);
     }
-    
+
     function adicionarLinhaTabela(data, id) {
         const row = tabelaCorpo.insertRow();
         row.dataset.analysisId = id;
@@ -626,7 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         row.insertCell(1).textContent = data.numRg;
         row.insertCell(2).textContent = data.numCpf;
-        
+
         let textoArtigos;
         if (data.especiePrisao === 'CIVIL') {
             textoArtigos = 'CIVIL';
@@ -637,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function () {
             textoArtigos = '';
         }
         row.insertCell(3).textContent = textoArtigos;
-        
+
         const cellEquipe = row.insertCell(4);
         cellEquipe.textContent = selectEquipe.options[selectEquipe.selectedIndex].text;
         cellEquipe.className = 'fw-bold';
@@ -660,10 +666,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const rg = colunas[1].textContent;
             const cpf = colunas[2].textContent;
             const artigos = colunas[3].textContent;
-            
+
             const equipeAbreviada = selectEquipe.value;
             const textoLinha = `${obterDataHoje()}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\t${equipeAbreviada}`;
-            
+
             navigator.clipboard.writeText(textoLinha).then(() => {
                 showToast("Linha da tabela copiada!");
             });
@@ -681,19 +687,19 @@ document.addEventListener('DOMContentLoaded', function () {
         actionsCell.append(btnCopyRow, btnDelete);
     }
 
-    document.getElementById('btnCopiarTabela').addEventListener('click', function() {
+    document.getElementById('btnCopiarTabela').addEventListener('click', function () {
         let textoCopiado = '';
         const dataHoje = obterDataHoje();
         const linhas = tabelaCorpo.querySelectorAll('tr');
         const equipeAbreviada = selectEquipe.value;
-        
+
         linhas.forEach(linha => {
             const colunas = linha.querySelectorAll('td');
             const nome = colunas[0].textContent.trim();
             const rg = colunas[1].textContent;
             const cpf = colunas[2].textContent;
             const artigos = colunas[3].textContent;
-            
+
             textoCopiado += `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\t${equipeAbreviada}\n`;
         });
 
