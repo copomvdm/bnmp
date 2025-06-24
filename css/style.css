@@ -27,7 +27,6 @@
     }
 }
 
-/* INÍCIO: ANIMAÇÃO PARA O ÍCONE DO NOVO MODAL */
 @keyframes pulse-info {
     0% {
         transform: scale(1);
@@ -46,7 +45,6 @@
 .modal-info-icon {
     animation: pulse-info 2s infinite ease-in-out;
 }
-/* FIM: ANIMAÇÃO PARA O ÍCONE DO NOVO MODAL */
 
 
 /* Base Styles */
@@ -75,9 +73,24 @@ h1, h3 {
     transition: transform 0.35s ease-in-out;
 }
 
-/* Seletor ajustado para a nova estrutura HTML */
 .collapse-trigger[aria-expanded="false"] .collapse-icon {
     transform: rotate(-180deg);
+}
+
+/* Ícones de Alerta */
+.processo-duplicado-icon,
+.mae-duplicada-icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    vertical-align: text-bottom;
+}
+
+.processo-duplicado-icon {
+    color: #0dcaf0; /* Cor 'info' do Bootstrap - Azul */
+}
+
+.mae-duplicada-icon {
+    color: #fd7e14; /* Cor 'orange' do Bootstrap */
 }
 
 /* Drag and Drop Area */
@@ -256,12 +269,10 @@ h1, h3 {
     text-align: left;
 }
 
-/* INÍCIO DA MODIFICAÇÃO: Centralizar conteúdo da tabela */
 #dados-tabela tbody td {
     text-align: center;
     vertical-align: middle;
 }
-/* FIM DA MODIFICAÇÃO */
 
 .actions-cell {
     text-align: center;
@@ -280,12 +291,26 @@ h1, h3 {
     font-size: 1rem;
 }
 
+/* Ícones de Alerta na Tabela */
+.processo-duplicado-icon-tabela,
+.mae-duplicada-icon-tabela {
+    margin-right: 0.5rem;
+}
+
+.processo-duplicado-icon-tabela {
+    color: #0dcaf0; /* Cor 'info' do Bootstrap - Azul */
+}
+
+.mae-duplicada-icon-tabela {
+    color: #fd7e14; /* Cor 'orange' do Bootstrap */
+}
+
+
 /* Footer */
 footer {
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Adicionado para a correção estrutural */
 .collapse-trigger {
     flex-grow: 1;
     display: flex;

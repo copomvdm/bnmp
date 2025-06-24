@@ -27,17 +27,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectEquipe = document.getElementById('select-equipe');
     const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela'); 
 
-    // INÍCIO: Seletores e instância do novo modal
+    // Modais
     const modalVerificarProcessoEl = document.getElementById('modalVerificarProcesso');
     const modalVerificarProcesso = new bootstrap.Modal(modalVerificarProcessoEl);
     const modalProcessoConteudo = document.getElementById('modal-processo-conteudo');
-    // FIM: Seletores do novo modal
+    const modalVerificarMaeEl = document.getElementById('modalVerificarMae'); // Novo modal
+    const modalVerificarMae = new bootstrap.Modal(modalVerificarMaeEl);     // Novo modal
+    const modalMaeConteudo = document.getElementById('modal-mae-conteudo'); // Novo modal
 
+    // Variáveis de estado
     let currentManagedFiles = [];
+    let currentAnalysisData = [];
     const MAX_FILES = 10;
     let fileIdParaExcluir = null;
     const EQUIPE_STORAGE_KEY = 'equipePadrao';
-    let analiseFeitaStatus = {}; // Armazenar o status de "feito"
+    let analiseFeitaStatus = {}; 
     
     const carregarEquipePadrao = () => {
         const equipeSalva = localStorage.getItem(EQUIPE_STORAGE_KEY);
@@ -158,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     const resetUI = () => {
         currentManagedFiles = [];
+        currentAnalysisData = [];
         inputFile.value = '';
         infoPdfDiv.classList.add('d-none');
         divCarregarPDF.classList.remove('d-none');
@@ -178,13 +183,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function removerArquivoEAnalise(fileId) {
-        const scrollY = window.scrollY; // 1. Salva a posição atual do scroll.
+        const scrollY = window.scrollY;
         const idToRemove = parseInt(fileId, 10);
-    
-        // A lógica interna para manipular os arrays e objetos permanece a mesma.
-        if (analiseFeitaStatus[idToRemove] !== undefined) {
-            delete analiseFeitaStatus[idToRemove];
-        }
     
         const newAnaliseFeitaStatus = {};
         let newIndex = 0;
@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
         analiseFeitaStatus = newAnaliseFeitaStatus;
     
         currentManagedFiles.splice(idToRemove, 1);
+        currentAnalysisData.splice(idToRemove, 1);
     
         if (currentManagedFiles.length === 0) {
             resetUI();
@@ -207,115 +208,138 @@ document.addEventListener('DOMContentLoaded', function () {
     
         updateFileUI();
         
-        // 2. Aguarda a função que recria a UI (que é assíncrona) terminar.
         await analisarErenderTodosOsResultados(false); 
     
-        // 3. Restaura a posição do scroll para onde estava, de forma instantânea.
         window.scrollTo({ top: scrollY, behavior: 'instant' });
     }
 
-    // INÍCIO: NOVA FUNÇÃO PARA VERIFICAR PROCESSOS DUPLICADOS
-    function verificarProcessosDuplicados(todosOsDados) {
-        // Objeto para agrupar nomes por número de processo
-        const processos = {};
+    function verificarProcessosDuplicados(todosOsDados, mostrarModal) {
+        document.querySelectorAll('.processo-duplicado-icon, .processo-duplicado-icon-tabela').forEach(icon => icon.classList.add('d-none'));
 
-        // Itera sobre todos os dados extraídos
-        todosOsDados.forEach(dado => {
-            // Se o número do processo não for nulo ou vazio
+        const processos = {};
+        todosOsDados.forEach((dado, index) => {
             if (dado.numProcesso) {
-                // Se o processo ainda não foi registrado, inicializa com um array
                 if (!processos[dado.numProcesso]) {
                     processos[dado.numProcesso] = [];
                 }
-                // Adiciona o nome do procurado ao processo correspondente
-                processos[dado.numProcesso].push(dado.nome);
+                processos[dado.numProcesso].push({ nome: dado.nome, id: index });
             }
         });
 
         let mensagemHTML = '';
-        // Itera sobre os processos agrupados
         for (const numProcesso in processos) {
-            // Se um processo tem mais de uma pessoa
-            if (processos[numProcesso].length > 1) {
-                const nomes = processos[numProcesso];
-                // Formata os nomes para exibição (ex: "Fulano, Ciclano e Beltrano")
+            const membros = processos[numProcesso];
+            if (membros.length > 1) {
+                const nomes = membros.map(m => m.nome);
                 const nomesFormatados = nomes.map(nome => `<strong>${nome}</strong>`).join(' e ');
-
-                // Cria uma mensagem para este grupo
-                mensagemHTML += `<p class="mb-3">Atenção: As seguintes pessoas possuem mandados expedidos pelo mesmo processo <strong>${numProcesso}</strong>:</p>
-                                 <p class="mb-3">${nomesFormatados}</p>
-                                 <p class="text-muted small">Recomenda-se a verificação de um possível parentesco.</p><hr>`;
+                mensagemHTML += `<p class="mb-3">Atenção: As seguintes pessoas possuem mandados expedidos pelo mesmo processo <strong>${numProcesso}</strong>:</p><p class="mb-3">${nomesFormatados}</p><hr>`;
+                membros.forEach(membro => {
+                    const cardElement = document.querySelector(`.section-resultado[data-analysis-id="${membro.id}"]`);
+                    if (cardElement) cardElement.querySelector('.processo-duplicado-icon')?.classList.remove('d-none');
+                    const tableRowElement = document.querySelector(`#tabela-corpo tr[data-analysis-id="${membro.id}"]`);
+                    if (tableRowElement) tableRowElement.querySelector('.processo-duplicado-icon-tabela')?.classList.remove('d-none');
+                });
             }
         }
         
-        // Se alguma mensagem foi gerada, exibe o modal
-        if (mensagemHTML) {
-            // Remove a última tag <hr> para um visual mais limpo
-            if (mensagemHTML.endsWith('<hr>')) {
-                mensagemHTML = mensagemHTML.slice(0, -4);
-            }
+        if (mostrarModal && mensagemHTML) {
+            if (mensagemHTML.endsWith('<hr>')) mensagemHTML = mensagemHTML.slice(0, -4);
             modalProcessoConteudo.innerHTML = mensagemHTML;
             modalVerificarProcesso.show();
         }
     }
-    // FIM: NOVA FUNÇÃO
 
-    async function analisarErenderTodosOsResultados(mostrarSpinner = true) {
-        const files = currentManagedFiles;
-        if (files.length === 0) {
-            resultadosContainer.innerHTML = '';
-            tabelaCorpo.innerHTML = '';
-            sectionTabela.classList.add('d-none');
-            return;
-        }
-        
-        if (mostrarSpinner) {
-            btnAnalisarPDF.disabled = true;
-            btnAnalisarPDF.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analisando...`;
-        }
-        
-        resultadosContainer.innerHTML = '';
-        tabelaCorpo.innerHTML = '';
+    // NOVA FUNÇÃO para verificar mães duplicadas
+    function verificarMaesDuplicadas(todosOsDados, mostrarModal) {
+        document.querySelectorAll('.mae-duplicada-icon, .mae-duplicada-icon-tabela').forEach(icon => icon.classList.add('d-none'));
 
-        let arquivosInvalidos = [];
-        let todosOsDados = []; // INÍCIO: Array para armazenar todos os dados extraídos
+        const maes = {};
+        todosOsDados.forEach((dado, index) => {
+            // Verifica se o nome da mãe existe e não é um valor genérico
+            if (dado.mae && dado.mae !== 'NAO INFORMADO' && dado.mae.length > 5) {
+                if (!maes[dado.mae]) {
+                    maes[dado.mae] = [];
+                }
+                maes[dado.mae].push({ nome: dado.nome, id: index });
+            }
+        });
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const dados = await extractDataFromPDF(file);
-            if (dados) {
-                todosOsDados.push(dados); // Adiciona os dados ao array
-                criarCardResultado(dados, i);
-                adicionarLinhaTabela(dados, i);
-            } else {
-                arquivosInvalidos.push(file.name);
+        let mensagemHTML = '';
+        for (const nomeMae in maes) {
+            const membros = maes[nomeMae];
+            if (membros.length > 1) {
+                const nomes = membros.map(m => m.nome);
+                const nomesFormatados = nomes.map(nome => `<strong>${nome}</strong>`).join(' e ');
+                mensagemHTML += `<p class="mb-3">Atenção: As seguintes pessoas parecem ser parentes, pois possuem a mesma mãe (<strong>${nomeMae}</strong>):</p><p class="mb-3">${nomesFormatados}</p><p class="text-muted small">Recomenda-se a verificação de um possível parentesco.</p><hr>`;
+                membros.forEach(membro => {
+                    const cardElement = document.querySelector(`.section-resultado[data-analysis-id="${membro.id}"]`);
+                    if (cardElement) cardElement.querySelector('.mae-duplicada-icon')?.classList.remove('d-none');
+                    const tableRowElement = document.querySelector(`#tabela-corpo tr[data-analysis-id="${membro.id}"]`);
+                    if (tableRowElement) tableRowElement.querySelector('.mae-duplicada-icon-tabela')?.classList.remove('d-none');
+                });
             }
         }
         
-        // FIM: Modificação para armazenar dados
+        if (mostrarModal && mensagemHTML) {
+            if (mensagemHTML.endsWith('<hr>')) mensagemHTML = mensagemHTML.slice(0, -4);
+            modalMaeConteudo.innerHTML = mensagemHTML;
+            modalVerificarMae.show();
+        }
+    }
 
-        if (tabelaCorpo.children.length > 0) {
-            sectionTabela.classList.remove('d-none');
-        } else {
+    async function analisarErenderTodosOsResultados(fazerAnaliseCompleta = true) {
+        resultadosContainer.innerHTML = '';
+        tabelaCorpo.innerHTML = '';
+
+        if (fazerAnaliseCompleta) {
+            btnAnalisarPDF.disabled = true;
+            btnAnalisarPDF.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analisando...`;
+            
+            currentAnalysisData = [];
+            let arquivosInvalidos = [];
+
+            for (const file of currentManagedFiles) {
+                const dados = await extractDataFromPDF(file);
+                if (dados) {
+                    currentAnalysisData.push(dados);
+                } else {
+                    arquivosInvalidos.push(file.name);
+                }
+            }
+
+            if (arquivosInvalidos.length > 0) {
+                showModalError(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
+            }
+        }
+
+        if (currentAnalysisData.length === 0) {
             sectionTabela.classList.add('d-none');
+            if (fazerAnaliseCompleta) {
+                btnAnalisarPDF.disabled = false;
+                btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
+            }
+            return;
         }
 
-        if(arquivosInvalidos.length > 0 && mostrarSpinner) {
-            showModalError(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
-        }
-        
-        if (mostrarSpinner) {
+        currentAnalysisData.forEach((dados, index) => {
+            criarCardResultado(dados, index);
+            adicionarLinhaTabela(dados, index);
+        });
+
+        sectionTabela.classList.remove('d-none');
+
+        if (fazerAnaliseCompleta) {
             const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
             if (primeiroResultado) {
                 primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        }
-
-        if (mostrarSpinner) {
             btnAnalisarPDF.disabled = false;
             btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
-            verificarProcessosDuplicados(todosOsDados); // INÍCIO: Chama a nova função de verificação
         }
+        
+        // Executa AMBAS as verificações
+        verificarProcessosDuplicados(currentAnalysisData, fazerAnaliseCompleta);
+        verificarMaesDuplicadas(currentAnalysisData, fazerAnaliseCompleta);
 
         inicializarTooltips();
     }
@@ -334,8 +358,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const closeButton = e.target.closest('.btn-close-file');
         if (closeButton) {
             const fileId = e.target.closest('[data-file-id]').dataset.fileId;
-            const file = currentManagedFiles[fileId];
-            abrirModalConfirmacao(fileId, file.name);
+            abrirModalConfirmacao(fileId, currentManagedFiles[fileId]?.name);
         }
     });
     
@@ -496,11 +519,18 @@ document.addEventListener('DOMContentLoaded', function () {
         resultadosContainer.appendChild(clone);
     }
     
+    // ATUALIZADO: Inclui placeholders para ambos os ícones
     function adicionarLinhaTabela(data, id) {
         const row = tabelaCorpo.insertRow();
         row.dataset.analysisId = id;
 
-        row.insertCell(0).textContent = data.nome;
+        const cellNome = row.insertCell(0);
+        cellNome.innerHTML = `
+            <span class="processo-duplicado-icon-tabela d-none" data-bs-toggle="tooltip" title="Este mandado possui o mesmo nº de processo de outro na lista."><i class="bi bi-link-45deg"></i></span>
+            <span class="mae-duplicada-icon-tabela d-none" data-bs-toggle="tooltip" title="Esta pessoa parece ter a mesma mãe de outra na lista."><i class="bi bi-people-fill"></i></span>
+            <span>${data.nome}</span>
+        `;
+
         row.insertCell(1).textContent = data.numRg;
         row.insertCell(2).textContent = data.numCpf;
         
@@ -525,7 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btnCopyRow.innerHTML = '<i class="bi bi-clipboard"></i>';
         btnCopyRow.addEventListener('click', () => {
             const colunas = row.querySelectorAll('td');
-            const nome = colunas[0].textContent;
+            const nome = colunas[0].textContent.trim();
             const rg = colunas[1].textContent;
             const cpf = colunas[2].textContent;
             const artigos = colunas[3].textContent;
@@ -558,12 +588,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
         linhas.forEach(linha => {
             const colunas = linha.querySelectorAll('td');
-            const nome = colunas[0].textContent;
+            const nome = colunas[0].textContent.trim();
             const rg = colunas[1].textContent;
             const cpf = colunas[2].textContent;
             const artigos = colunas[3].textContent;
             
-            // CORREÇÃO APLICADA AQUI: Removido '()' da variável dataHoje.
             textoCopiado += `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\t${equipeAbreviada}\n`;
         });
 

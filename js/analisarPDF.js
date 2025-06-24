@@ -102,16 +102,19 @@ function extractDate(text) {
 
 // Função para extrair a Lei e o Artigo
 function extractLawAndArticle(text) {
-    const match = text.match(/Tipificação Penal:(.*?)Identificação biométrica:/s);
-    if (!match) return '';
+    // Tenta extrair primeiro o bloco entre Tipificação e um marcador final confiável
+    let trecho = text.match(/Tipificação Penal:(.*?)Identificação biométrica:/s)?.[1] 
+              || text.match(/Tipificação Penal:(.*?)Teor do Documento:/s)?.[1];
+    
+    if (!trecho) return '';
 
-    const trecho = match[1];
-    const leiMatch = trecho.match(/Lei:\s*(\d+)/);
-    const lei = leiMatch ? leiMatch[1] : '';
-    const artigosEncontrados = [...trecho.matchAll(/Artigo:\s*(\d+\w?)/g)];
-    const artigosUnicos = [...new Set(artigosEncontrados.map(m => m[1]))];
+    const leiMatch = [...trecho.matchAll(/Lei:\s*(\d+)/g)];
+    const artigosEncontrados = [...trecho.matchAll(/Artigo:\s*([\w\d.,º§°]+)/g)];
 
-    if (lei && artigosUnicos.length > 0) {
+    if (leiMatch.length > 0 && artigosEncontrados.length > 0) {
+        // Pega o último match de Lei, que tende a ser o correto em casos de múltiplos
+        const lei = leiMatch[leiMatch.length-1][1]; 
+        const artigosUnicos = [...new Set(artigosEncontrados.map(m => m[1].trim()))];
         return `Lei: ${lei}, Art.: ${artigosUnicos.join(', ')}`;
     }
     return '';
@@ -158,51 +161,51 @@ async function extractDataFromPDF(pdfFile) {
             tipDoc: tipDoc
         };
 
-        // Extrai o CPF de forma robusta, independentemente do tipo de mandado
         dados.numCpf = extractCPF(textoCompleto) || '';
         if (dados.numCpf) {
             dados.isCpfValido = validarCPF(dados.numCpf);
         }
 
-        if (tipDoc === 'mandado de recaptura') {
-            // Extrai o bloco de texto entre "Pessoa Procurada:" e "CPF:", que é um marcador confiável
-            const blocoNome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'CPF:');
-            // Dentro desse bloco, o nome real é o que vem antes de "Nome Social:"
-            dados.nome = blocoNome.split('Nome Social:')[0].trim().toUpperCase();
+        // --- INÍCIO DA ALTERAÇÃO ---
+        // Extrai o nome da mãe e já normaliza (remove acentos e põe em maiúsculo)
+        let nomeMaeExtraido = extractBetween(textoCompleto, 'Filiação:', '(mãe)').trim();
+        if (nomeMaeExtraido) {
+            dados.mae = normalizeText(nomeMaeExtraido).toUpperCase();
+        } else {
+            dados.mae = '';
+        }
+        // --- FIM DA ALTERAÇÃO ---
 
+        if (tipDoc === 'mandado de recaptura') {
+            const blocoNome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'CPF:');
+            dados.nome = blocoNome.split('Nome Social:')[0].trim().toUpperCase();
             dados.numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Marcas e sinais:')) || '';
-            // Extrai apenas o nome da mãe.
-            dados.mae = extractBetween(textoCompleto, 'Filiação:', '(mãe)').trim().toUpperCase();
             dados.numMandado = extractBetween(textoCompleto, 'N° do Documento:', 'Data de validade:') || '';
             dados.numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || '';
             dados.dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n')) || '';
             dados.dataValidade = extractBetween(textoCompleto, 'Data de validade:', 'Pessoa Procurada:')?.trim() || '';
-            dados.artigo = extractLawAndArticle(textoCompleto);
             dados.condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
         } else {
-            // Lógica original e funcional para outros tipos de mandado
             dados.nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
-            
             dados.numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
-            // Extrai apenas o nome da mãe.
-            dados.mae = extractBetween(textoCompleto, 'Filiação:', '(mãe)').trim().toUpperCase();
             dados.numMandado = extractBetween(textoCompleto, 'N° do Mandado:', 'Data de validade:') || extractBetween(textoCompleto, 'Nº do Mandado:', 'Data de validade:');
             dados.numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || extractBetween(textoCompleto, 'N° do processo:', 'Órgão Judicial:');
             dados.dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
             dados.dataValidade = extractDate(extractBetween(textoCompleto, 'Data de validade:', 'Nome Social:'));
-            dados.artigo = extractLawAndArticle(textoCompleto);
-            dados.condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
+            dados.condenacao = extractBetween(textoCompleto, 'Condenação:', 'Regime Prisional:') || '';
         }
         
-        // Garante que o nome não fique vazio caso a primeira extração falhe
         if (!dados.nome && tipDoc === 'mandado de recaptura') {
             dados.nome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'Nome Social:').trim().toUpperCase();
         }
+
+        // Extração de artigo e lei consolidada para todos os tipos
+        dados.artigo = extractLawAndArticle(textoCompleto);
 
         return dados;
 
     } catch (error) {
         console.error(`Erro ao processar o arquivo ${pdfFile.name}:`, error);
-        return null; // Retorna nulo em caso de erro na biblioteca PDF.js
+        return null; 
     }
 }
