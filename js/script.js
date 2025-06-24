@@ -406,7 +406,8 @@ document.addEventListener('DOMContentLoaded', function () {
             abrirModalConfirmacao(id, data.nome);
         });
 
-        const textarea = clone.querySelector('.textarea-resultado');
+        // --- INÍCIO DA MODIFICAÇÃO ---
+        const editableDiv = clone.querySelector('.textarea-resultado');
         const checkFoto = clone.querySelector('.check-foto');
         const labelFoto = clone.querySelector('.form-check-label');
         const uniqueId = `check-foto-${id}`;
@@ -417,35 +418,40 @@ document.addEventListener('DOMContentLoaded', function () {
         const contagem = clone.querySelector('.span-contagem');
         const btnCopiarResumo = clone.querySelector('.btn-copiar-resumo');
         
-        const rgTexto = data.numRg ? `, RG: ${data.numRg}` : '';
-        const cpfTexto = data.numCpf ? `, CPF: ${data.numCpf}` : '';
-        const artigoTexto = data.artigo ? `TIP PENAL: ${data.artigo}` : '';
+        const rgTexto = data.numRg ? `, <strong>RG:</strong> ${data.numRg}` : '';
+        const cpfTexto = data.numCpf ? `, <strong>CPF:</strong> ${data.numCpf}` : '';
+        const artigoTexto = data.artigo ? `<strong>TIP PENAL:</strong> ${data.artigo.replace('Art.:', '<strong>Art.:</strong>')}` : '';
         const condenacaoTexto = (data.condenacao && data.condenacao.trim().toLowerCase() !== 'null') ? `PENA IMPOSTA: ${data.condenacao.trim()}` : '';
-        const textoBase = `CONSTA ${data.tipDoc} VIA BNMP CONTRA: ${data.nome}${rgTexto}${cpfTexto}, - MANDADO Nº: ${data.numMandado}, - PROCESSO Nº: ${data.numProcesso}, ${artigoTexto}, - EXPEDIDO EM: ${data.dataExp}, - VÁLIDO ATÉ: ${data.dataValidade}, ${condenacaoTexto} / COPOM CAPTURA.`;
+        const textoBase = `CONSTA ${data.tipDoc} VIA BNMP <strong>CONTRA:</strong> ${data.nome}${rgTexto}${cpfTexto}, - <strong>MANDADO Nº:</strong> ${data.numMandado}, - <strong>PROCESSO Nº:</strong> ${data.numProcesso}, ${artigoTexto}, - <strong>EXPEDIDO EM:</strong> ${data.dataExp}, - <strong>VÁLIDO ATÉ:</strong> ${data.dataValidade}, ${condenacaoTexto} / COPOM CAPTURA.`;
         
-        textarea.value = textoBase;
-        contagem.textContent = `${textarea.value.length} caracteres`;
+        editableDiv.innerHTML = textoBase;
+        contagem.textContent = `${editableDiv.innerText.length} caracteres`;
         
-        textarea.addEventListener('input', () => {
-            contagem.textContent = `${textarea.value.length} caracteres`;
+        editableDiv.addEventListener('input', () => {
+            contagem.textContent = `${editableDiv.innerText.length} caracteres`;
         });
         
         checkFoto.addEventListener('change', function() {
-            let currentText = textarea.value;
+            let currentHtml = editableDiv.innerHTML;
             const textoFoto = ' POSSUI FOTO';
             const textoFinal = ' / COPOM CAPTURA.';
-            currentText = currentText.replace(textoFoto, '');
+            
+            // Remove a marcação de foto para evitar duplicação
+            currentHtml = currentHtml.replace(textoFoto, '');
 
             if (this.checked) {
-                currentText = currentText.replace(textoFinal, `${textoFoto}${textoFinal}`);
+                // Insere a marcação de foto antes do final
+                currentHtml = currentHtml.replace(textoFinal, `${textoFoto}${textoFinal}`);
             }
-            textarea.value = currentText;
-            contagem.textContent = `${textarea.value.length} caracteres`;
+            editableDiv.innerHTML = currentHtml;
+            contagem.textContent = `${editableDiv.innerText.length} caracteres`;
         });
         
         btnCopiarResumo.addEventListener('click', () => {
-            navigator.clipboard.writeText(textarea.value.toUpperCase()).then(() => showToast("Resumo copiado!"));
+            // Copia o texto visível (sem as tags HTML)
+            navigator.clipboard.writeText(editableDiv.innerText.toUpperCase()).then(() => showToast("Resumo copiado!"));
         });
+        // --- FIM DA MODIFICAÇÃO ---
         
         const infoBadgeNome = clone.querySelector('.info-badge-nome');
         const infoBadgeCpf = clone.querySelector('.info-badge-cpf');

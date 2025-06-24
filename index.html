@@ -97,8 +97,7 @@
                     <div class="collapse show">
                         <div class="card-body p-4">
                             <div class="mb-3">
-                                <textarea class="form-control text-uppercase textarea-resultado" rows="6"
-                                    placeholder="O resultado da análise aparecerá aqui..."></textarea>
+                                <div class="form-control text-uppercase textarea-resultado" contenteditable="true" role="textbox" aria-multiline="true"></div>
                                 <small class="form-text text-muted float-end span-contagem">0 caracteres</small>
                             </div>
                             <div class="form-check form-switch d-flex align-items-center justify-content-center gap-2 my-4">
@@ -130,7 +129,7 @@
 
                                 <div class="info-badge info-badge-cpf d-none" role="button" tabindex="0"
                                     data-bs-toggle="tooltip" title="Clique para copiar o CPF">
-                                    <i class="bi bi-person-vcard"></i>
+                                    <i class="bi bi-fingerprint"></i>
                                     <div class="info-badge-text">
                                         <span class="info-badge-label">CPF</span>
                                         <span class="info-badge-value"></span>
