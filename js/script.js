@@ -316,15 +316,13 @@ document.addEventListener('DOMContentLoaded', function () {
         
         cardTitle.textContent = `Resultado do mandado de ${data.nome}`;
 
-        const iconsContainer = cardHeader.querySelector('.d-flex.align-items-center');
-        const chevronIcon = iconsContainer.querySelector('.collapse-icon');
+        const chevronIcon = collapseTrigger.querySelector('.collapse-icon');
         const feitoIndicator = document.createElement('span');
         feitoIndicator.className = 'text-success fw-bold me-2 d-none feito-indicator';
         feitoIndicator.innerHTML = `<i class="bi bi-check-circle-fill"></i> Feito`;
-        iconsContainer.insertBefore(feitoIndicator, chevronIcon);
+        collapseTrigger.insertBefore(feitoIndicator, chevronIcon);
 
         btnCloseResultCard.addEventListener('click', (e) => {
-            e.stopPropagation();
             abrirModalConfirmacao(id, data.nome);
         });
 
@@ -372,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const infoBadgeNome = clone.querySelector('.info-badge-nome');
         const infoBadgeCpf = clone.querySelector('.info-badge-cpf');
         const infoBadgeRg = clone.querySelector('.info-badge-rg');
+        const infoBadgeMae = clone.querySelector('.info-badge-mae');
 
         if (data.nome) {
             infoBadgeNome.querySelector('.info-badge-value').textContent = data.nome;
@@ -394,6 +393,14 @@ document.addEventListener('DOMContentLoaded', function () {
             infoBadgeRg.classList.remove('d-none');
             infoBadgeRg.addEventListener('click', () => {
                 navigator.clipboard.writeText(data.numRg).then(() => showToast("RG copiado!"));
+            });
+        }
+        
+        if (data.mae) {
+            infoBadgeMae.querySelector('.info-badge-value').textContent = data.mae;
+            infoBadgeMae.classList.remove('d-none');
+            infoBadgeMae.addEventListener('click', () => {
+                navigator.clipboard.writeText(data.mae).then(() => showToast("Nome da Mãe copiado!"));
             });
         }
 
@@ -499,6 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const cpf = colunas[2].textContent;
             const artigos = colunas[3].textContent;
             
+            // CORREÇÃO APLICADA AQUI: Removido '()' da variável dataHoje.
             textoCopiado += `${dataHoje}\t\t\t\t\t${nome}\t${rg}\t${cpf}\t\t${artigos}\t${equipeAbreviada}\n`;
         });
 

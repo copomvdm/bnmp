@@ -50,11 +50,49 @@ function extractNumbers(text) {
     return text.replace(/\D/g, '');
 }
 
-// Função para extrair CPF (formato específico)
+// Função para extrair CPF (formato específico e completo de 11 dígitos) de qualquer parte do texto.
 function extractCPF(text) {
     const match = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
     return match ? match[0] : '';
 }
+
+// Função para validar CPF
+function validarCPF(cpf) {
+    cpf = cpf.replace(/[^\d]+/g, '');
+
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+        return false;
+    }
+
+    let soma = 0;
+    let resto;
+
+    for (let i = 1; i <= 9; i++) {
+        soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+    }
+    resto = (soma * 10) % 11;
+    if ((resto === 10) || (resto === 11)) {
+        resto = 0;
+    }
+    if (resto !== parseInt(cpf.substring(9, 10))) {
+        return false;
+    }
+
+    soma = 0;
+    for (let i = 1; i <= 10; i++) {
+        soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+    }
+    resto = (soma * 10) % 11;
+    if ((resto === 10) || (resto === 11)) {
+        resto = 0;
+    }
+    if (resto !== parseInt(cpf.substring(10, 11))) {
+        return false;
+    }
+
+    return true;
+}
+
 
 // Função para extrair datas no formato dd/mm/aaaa
 function extractDate(text) {
@@ -108,7 +146,9 @@ async function extractDataFromPDF(pdfFile) {
             fileName: pdfFile.name,
             nome: '',
             numCpf: '',
+            isCpfValido: true,
             numRg: '',
+            mae: '',
             numMandado: '',
             numProcesso: '',
             dataExp: '',
@@ -118,10 +158,21 @@ async function extractDataFromPDF(pdfFile) {
             tipDoc: tipDoc
         };
 
+        // Extrai o CPF de forma robusta, independentemente do tipo de mandado
+        dados.numCpf = extractCPF(textoCompleto) || '';
+        if (dados.numCpf) {
+            dados.isCpfValido = validarCPF(dados.numCpf);
+        }
+
         if (tipDoc === 'mandado de recaptura') {
-            dados.nome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'CPF:').trim().toUpperCase();
-            dados.numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Nome Social:')) || '';
-            dados.numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
+            // Extrai o bloco de texto entre "Pessoa Procurada:" e "CPF:", que é um marcador confiável
+            const blocoNome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'CPF:');
+            // Dentro desse bloco, o nome real é o que vem antes de "Nome Social:"
+            dados.nome = blocoNome.split('Nome Social:')[0].trim().toUpperCase();
+
+            dados.numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Marcas e sinais:')) || '';
+            // Extrai apenas o nome da mãe.
+            dados.mae = extractBetween(textoCompleto, 'Filiação:', '(mãe)').trim().toUpperCase();
             dados.numMandado = extractBetween(textoCompleto, 'N° do Documento:', 'Data de validade:') || '';
             dados.numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || '';
             dados.dataExp = extractDate(extractBetween(textoCompleto, 'Documento gerado em:', '\n')) || '';
@@ -129,9 +180,12 @@ async function extractDataFromPDF(pdfFile) {
             dados.artigo = extractLawAndArticle(textoCompleto);
             dados.condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
         } else {
+            // Lógica original e funcional para outros tipos de mandado
             dados.nome = extractBetween(textoCompleto, 'Nome da Pessoa:', 'CPF:').trim().toUpperCase();
-            dados.numCpf = extractCPF(extractBetween(textoCompleto, 'CPF:', 'Teor do Documento')) || '';
+            
             dados.numRg = extractNumbers(extractBetween(textoCompleto, 'RG:', 'Filiação:')) || '';
+            // Extrai apenas o nome da mãe.
+            dados.mae = extractBetween(textoCompleto, 'Filiação:', '(mãe)').trim().toUpperCase();
             dados.numMandado = extractBetween(textoCompleto, 'N° do Mandado:', 'Data de validade:') || extractBetween(textoCompleto, 'Nº do Mandado:', 'Data de validade:');
             dados.numProcesso = extractBetween(textoCompleto, 'Nº do processo:', 'Órgão Judicial:') || extractBetween(textoCompleto, 'N° do processo:', 'Órgão Judicial:');
             dados.dataExp = extractDate(extractBetween(textoCompleto, 'Documento criado em:', '\n'));
@@ -140,6 +194,11 @@ async function extractDataFromPDF(pdfFile) {
             dados.condenacao = extractBetween(textoCompleto, 'Pena restante:', 'Regime Prisional:') || '';
         }
         
+        // Garante que o nome não fique vazio caso a primeira extração falhe
+        if (!dados.nome && tipDoc === 'mandado de recaptura') {
+            dados.nome = extractBetween(textoCompleto, 'Pessoa Procurada:', 'Nome Social:').trim().toUpperCase();
+        }
+
         return dados;
 
     } catch (error) {

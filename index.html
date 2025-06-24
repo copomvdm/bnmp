@@ -82,14 +82,11 @@
             <section class="section-resultado">
                 <div class="card shadow-sm">
                     <div class="card-header fw-bold d-flex justify-content-between align-items-center">
-                        <div class="collapse-trigger" role="button" data-bs-toggle="collapse" aria-expanded="true">
-                            <span class="card-title-filename"></span>
-                        </div>
-                        
-                        <div class="d-flex align-items-center">
+                        <div class="collapse-trigger d-flex align-items-center flex-grow-1" role="button" data-bs-toggle="collapse" aria-expanded="true">
+                            <span class="card-title-filename flex-grow-1"></span>
                             <i class="bi bi-chevron-down collapse-icon me-2"></i>
-                            <button type="button" class="btn-close btn-close-result-card" aria-label="Remover Análise"></button>
                         </div>
+                        <button type="button" class="btn-close btn-close-result-card ms-2" aria-label="Remover Análise"></button>
                     </div>
                     <div class="collapse show">
                         <div class="card-body p-4">
@@ -139,6 +136,14 @@
                                     <i class="bi bi-person-vcard-fill"></i>
                                     <div class="info-badge-text">
                                         <span class="info-badge-label">RG</span>
+                                        <span class="info-badge-value"></span>
+                                    </div>
+                                </div>
+                                <div class="info-badge info-badge-mae d-none" role="button" tabindex="0"
+                                    data-bs-toggle="tooltip" title="Clique para copiar o nome da Mãe">
+                                    <i class="bi bi-people-fill"></i>
+                                    <div class="info-badge-text">
+                                        <span class="info-badge-label">MÃE</span>
                                         <span class="info-badge-value"></span>
                                     </div>
                                 </div>

@@ -54,7 +54,7 @@ h1, h3 {
 }
 
 /* Seletor ajustado para a nova estrutura HTML */
-.collapse-trigger[aria-expanded="false"] + .d-flex .collapse-icon {
+.collapse-trigger[aria-expanded="false"] .collapse-icon {
     transform: rotate(-180deg);
 }
 
