@@ -25,12 +25,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmacaoModalTexto = document.getElementById('confirmacao-modal-texto');
     const btnConfirmarExclusao = document.getElementById('btn-confirmar-exclusao');
     const selectEquipe = document.getElementById('select-equipe');
-    const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela'); // MODIFICAÇÃO: Selecionar novo botão
+    const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela'); 
 
     let currentManagedFiles = [];
     const MAX_FILES = 10;
     let fileIdParaExcluir = null;
     const EQUIPE_STORAGE_KEY = 'equipePadrao';
+    let analiseFeitaStatus = {}; // NOVO: Armazenar o status de "feito"
     
     const carregarEquipePadrao = () => {
         const equipeSalva = localStorage.getItem(EQUIPE_STORAGE_KEY);
@@ -159,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tabelaCorpo.innerHTML = '';
         sectionTabela.classList.add('d-none');
         procurarArquivoLabel.classList.remove('d-none');
+        analiseFeitaStatus = {}; // NOVO: Limpar o status ao resetar
         console.clear();
     };
 
@@ -172,6 +174,24 @@ document.addEventListener('DOMContentLoaded', function () {
     function removerArquivoEAnalise(fileId) {
         const idToRemove = parseInt(fileId, 10);
         
+        // NOVO: Remover o status do arquivo excluído
+        if (analiseFeitaStatus[idToRemove] !== undefined) {
+            delete analiseFeitaStatus[idToRemove];
+        }
+
+        // NOVO: Reindexar as chaves no analiseFeitaStatus após a remoção
+        const newAnaliseFeitaStatus = {};
+        let newIndex = 0;
+        for (let i = 0; i < currentManagedFiles.length; i++) {
+            if (i !== idToRemove) {
+                if (analiseFeitaStatus[i] !== undefined) {
+                    newAnaliseFeitaStatus[newIndex] = analiseFeitaStatus[i];
+                }
+                newIndex++;
+            }
+        }
+        analiseFeitaStatus = newAnaliseFeitaStatus;
+
         currentManagedFiles.splice(idToRemove, 1);
 
         if (currentManagedFiles.length === 0) {
@@ -245,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     inputFile.addEventListener('change', (e) => handleFiles(e.target.files));
     fecharPdfBtn.addEventListener('click', resetUI);
-    btnLimparSelecaoTabela.addEventListener('click', resetUI); // MODIFICAÇÃO: Adicionar listener ao novo botão
+    btnLimparSelecaoTabela.addEventListener('click', resetUI); 
 
     listaArquivosDiv.addEventListener('click', function(e) {
         const closeButton = e.target.closest('.btn-close-file');
@@ -374,6 +394,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const btnGerarTalao = clone.querySelector('.btn-feito');
         const cardBody = clone.querySelector('.card-body');
 
+        // NOVO: Aplicar o estado "feito" se ele existir
+        if (analiseFeitaStatus[id]) {
+            cardBody.classList.add('talao-gerado');
+            cardHeader.classList.add('header-feito');
+            feitoIndicator.classList.remove('d-none');
+            btnGerarTalao.innerHTML = `<i class="bi bi-check-circle-fill"></i> Feito`;
+            btnGerarTalao.classList.replace('btn-outline-success', 'btn-success');
+        }
+
         btnGerarTalao.addEventListener('click', function() {
             const tableRow = tabelaCorpo.querySelector(`[data-analysis-id="${id}"]`);
 
@@ -383,7 +412,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (tableRow) tableRow.classList.toggle('table-success');
 
-            if (cardBody.classList.contains('talao-gerado')) {
+            // NOVO: Atualizar o status no objeto
+            const isFeito = cardBody.classList.contains('talao-gerado');
+            analiseFeitaStatus[id] = isFeito;
+
+            if (isFeito) {
                 this.innerHTML = `<i class="bi bi-check-circle-fill"></i> Feito`;
                 this.classList.replace('btn-outline-success', 'btn-success');
             } else {
@@ -409,6 +442,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const cellEquipe = row.insertCell(4);
         cellEquipe.textContent = selectEquipe.options[selectEquipe.selectedIndex].text;
         cellEquipe.className = 'fw-bold';
+
+        // NOVO: Aplicar o estilo da linha da tabela se o card correspondente estiver marcado como feito
+        if (analiseFeitaStatus[id]) {
+            row.classList.add('table-success');
+        }
 
         const actionsCell = row.insertCell(5);
         actionsCell.className = 'actions-cell';
