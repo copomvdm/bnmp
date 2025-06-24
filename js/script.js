@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const MAX_FILES = 10;
     let fileIdParaExcluir = null;
     const EQUIPE_STORAGE_KEY = 'equipePadrao';
-    let analiseFeitaStatus = {}; // NOVO: Armazenar o status de "feito"
+    let analiseFeitaStatus = {}; // Armazenar o status de "feito"
     
     const carregarEquipePadrao = () => {
         const equipeSalva = localStorage.getItem(EQUIPE_STORAGE_KEY);
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tabelaCorpo.innerHTML = '';
         sectionTabela.classList.add('d-none');
         procurarArquivoLabel.classList.remove('d-none');
-        analiseFeitaStatus = {}; // NOVO: Limpar o status ao resetar
+        analiseFeitaStatus = {};
         console.clear();
     };
 
@@ -171,15 +171,15 @@ document.addEventListener('DOMContentLoaded', function () {
         confirmacaoModal.show();
     }
 
-    function removerArquivoEAnalise(fileId) {
+    async function removerArquivoEAnalise(fileId) {
+        const scrollY = window.scrollY; // 1. Salva a posição atual do scroll.
         const idToRemove = parseInt(fileId, 10);
-        
-        // NOVO: Remover o status do arquivo excluído
+    
+        // A lógica interna para manipular os arrays e objetos permanece a mesma.
         if (analiseFeitaStatus[idToRemove] !== undefined) {
             delete analiseFeitaStatus[idToRemove];
         }
-
-        // NOVO: Reindexar as chaves no analiseFeitaStatus após a remoção
+    
         const newAnaliseFeitaStatus = {};
         let newIndex = 0;
         for (let i = 0; i < currentManagedFiles.length; i++) {
@@ -191,16 +191,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         analiseFeitaStatus = newAnaliseFeitaStatus;
-
+    
         currentManagedFiles.splice(idToRemove, 1);
-
+    
         if (currentManagedFiles.length === 0) {
             resetUI();
             return;
         }
-
+    
         updateFileUI();
-        analisarErenderTodosOsResultados(false);
+        
+        // 2. Aguarda a função que recria a UI (que é assíncrona) terminar.
+        await analisarErenderTodosOsResultados(false); 
+    
+        // 3. Restaura a posição do scroll para onde estava, de forma instantânea.
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
     }
 
     async function analisarErenderTodosOsResultados(mostrarSpinner = true) {
@@ -243,12 +248,13 @@ document.addEventListener('DOMContentLoaded', function () {
             showModalError(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
         }
         
-        // INÍCIO DA MODIFICAÇÃO: Focar no primeiro resultado após análise
-        const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
-        if (primeiroResultado) {
-            primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Modificação para focar no primeiro resultado apenas na análise inicial
+        if (mostrarSpinner) {
+            const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
+            if (primeiroResultado) {
+                primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
-        // FIM DA MODIFICAÇÃO
 
         if (mostrarSpinner) {
             btnAnalisarPDF.disabled = false;
@@ -394,7 +400,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const btnGerarTalao = clone.querySelector('.btn-feito');
         const cardBody = clone.querySelector('.card-body');
 
-        // NOVO: Aplicar o estado "feito" se ele existir
         if (analiseFeitaStatus[id]) {
             cardBody.classList.add('talao-gerado');
             cardHeader.classList.add('header-feito');
@@ -412,7 +417,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (tableRow) tableRow.classList.toggle('table-success');
 
-            // NOVO: Atualizar o status no objeto
             const isFeito = cardBody.classList.contains('talao-gerado');
             analiseFeitaStatus[id] = isFeito;
 
@@ -443,7 +447,6 @@ document.addEventListener('DOMContentLoaded', function () {
         cellEquipe.textContent = selectEquipe.options[selectEquipe.selectedIndex].text;
         cellEquipe.className = 'fw-bold';
 
-        // NOVO: Aplicar o estilo da linha da tabela se o card correspondente estiver marcado como feito
         if (analiseFeitaStatus[id]) {
             row.classList.add('table-success');
         }
