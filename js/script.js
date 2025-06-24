@@ -27,6 +27,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectEquipe = document.getElementById('select-equipe');
     const btnLimparSelecaoTabela = document.getElementById('btnLimparSelecaoTabela'); 
 
+    // INÍCIO: Seletores e instância do novo modal
+    const modalVerificarProcessoEl = document.getElementById('modalVerificarProcesso');
+    const modalVerificarProcesso = new bootstrap.Modal(modalVerificarProcessoEl);
+    const modalProcessoConteudo = document.getElementById('modal-processo-conteudo');
+    // FIM: Seletores do novo modal
+
     let currentManagedFiles = [];
     const MAX_FILES = 10;
     let fileIdParaExcluir = null;
@@ -208,6 +214,52 @@ document.addEventListener('DOMContentLoaded', function () {
         window.scrollTo({ top: scrollY, behavior: 'instant' });
     }
 
+    // INÍCIO: NOVA FUNÇÃO PARA VERIFICAR PROCESSOS DUPLICADOS
+    function verificarProcessosDuplicados(todosOsDados) {
+        // Objeto para agrupar nomes por número de processo
+        const processos = {};
+
+        // Itera sobre todos os dados extraídos
+        todosOsDados.forEach(dado => {
+            // Se o número do processo não for nulo ou vazio
+            if (dado.numProcesso) {
+                // Se o processo ainda não foi registrado, inicializa com um array
+                if (!processos[dado.numProcesso]) {
+                    processos[dado.numProcesso] = [];
+                }
+                // Adiciona o nome do procurado ao processo correspondente
+                processos[dado.numProcesso].push(dado.nome);
+            }
+        });
+
+        let mensagemHTML = '';
+        // Itera sobre os processos agrupados
+        for (const numProcesso in processos) {
+            // Se um processo tem mais de uma pessoa
+            if (processos[numProcesso].length > 1) {
+                const nomes = processos[numProcesso];
+                // Formata os nomes para exibição (ex: "Fulano, Ciclano e Beltrano")
+                const nomesFormatados = nomes.map(nome => `<strong>${nome}</strong>`).join(' e ');
+
+                // Cria uma mensagem para este grupo
+                mensagemHTML += `<p class="mb-3">Atenção: As seguintes pessoas possuem mandados expedidos pelo mesmo processo <strong>${numProcesso}</strong>:</p>
+                                 <p class="mb-3">${nomesFormatados}</p>
+                                 <p class="text-muted small">Recomenda-se a verificação de um possível parentesco.</p><hr>`;
+            }
+        }
+        
+        // Se alguma mensagem foi gerada, exibe o modal
+        if (mensagemHTML) {
+            // Remove a última tag <hr> para um visual mais limpo
+            if (mensagemHTML.endsWith('<hr>')) {
+                mensagemHTML = mensagemHTML.slice(0, -4);
+            }
+            modalProcessoConteudo.innerHTML = mensagemHTML;
+            modalVerificarProcesso.show();
+        }
+    }
+    // FIM: NOVA FUNÇÃO
+
     async function analisarErenderTodosOsResultados(mostrarSpinner = true) {
         const files = currentManagedFiles;
         if (files.length === 0) {
@@ -226,11 +278,13 @@ document.addEventListener('DOMContentLoaded', function () {
         tabelaCorpo.innerHTML = '';
 
         let arquivosInvalidos = [];
+        let todosOsDados = []; // INÍCIO: Array para armazenar todos os dados extraídos
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const dados = await extractDataFromPDF(file);
             if (dados) {
+                todosOsDados.push(dados); // Adiciona os dados ao array
                 criarCardResultado(dados, i);
                 adicionarLinhaTabela(dados, i);
             } else {
@@ -238,6 +292,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         
+        // FIM: Modificação para armazenar dados
+
         if (tabelaCorpo.children.length > 0) {
             sectionTabela.classList.remove('d-none');
         } else {
@@ -248,7 +304,6 @@ document.addEventListener('DOMContentLoaded', function () {
             showModalError(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
         }
         
-        // Modificação para focar no primeiro resultado apenas na análise inicial
         if (mostrarSpinner) {
             const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
             if (primeiroResultado) {
@@ -259,7 +314,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (mostrarSpinner) {
             btnAnalisarPDF.disabled = false;
             btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
+            verificarProcessosDuplicados(todosOsDados); // INÍCIO: Chama a nova função de verificação
         }
+
         inicializarTooltips();
     }
 

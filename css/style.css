@@ -27,6 +27,28 @@
     }
 }
 
+/* INÍCIO: ANIMAÇÃO PARA O ÍCONE DO NOVO MODAL */
+@keyframes pulse-info {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(13, 202, 240, 0.4);
+    }
+    50% {
+        transform: scale(1.1);
+        text-shadow: 0 0 20px rgba(13, 202, 240, 0.8);
+    }
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(13, 202, 240, 0.4);
+    }
+}
+
+.modal-info-icon {
+    animation: pulse-info 2s infinite ease-in-out;
+}
+/* FIM: ANIMAÇÃO PARA O ÍCONE DO NOVO MODAL */
+
+
 /* Base Styles */
 body {
     font-family: 'Poppins', sans-serif;
