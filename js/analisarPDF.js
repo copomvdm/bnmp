@@ -100,25 +100,39 @@ function extractDate(text) {
     return match ? match[0] : '';
 }
 
+// *** FUNÇÃO ATUALIZADA ***
 // Função para extrair a Lei e o Artigo
 function extractLawAndArticle(text) {
-    // Tenta extrair primeiro o bloco entre Tipificação e um marcador final confiável
-    let trecho = text.match(/Tipificação Penal:(.*?)Identificação biométrica:/s)?.[1] 
-              || text.match(/Tipificação Penal:(.*?)Teor do Documento:/s)?.[1];
-    
-    if (!trecho) return '';
+    // 1. Isola a seção de Tipificação Penal.
+    const tipificacaoMatch = text.match(/Tipificação Penal:(.*?)(Condenação:|Regime Prisional:|Identificação biométrica:|Teor do Documento:)/s);
+    if (!tipificacaoMatch || !tipificacaoMatch[1]) {
+        return ''; // Retorna se não encontrar a seção
+    }
+    let trecho = tipificacaoMatch[1].trim().replace(/\n/g, ' ');
 
-    const leiMatch = [...trecho.matchAll(/Lei:\s*(\d+)/g)];
-    const artigosEncontrados = [...trecho.matchAll(/Artigo:\s*([\w\d.,º§°]+)/g)];
+    // 2. NOVA LÓGICA: Tenta encontrar o padrão "Lei: [num], art. [num]"
+    // A regex agora busca especificamente por "art." seguido por dígitos (\d+),
+    // ignorando parágrafos e incisos.
+    const novoFormatoMatch = trecho.match(/Lei:\s*(\d+),?\s*art\.\s*(\d+)/i);
+    if (novoFormatoMatch) {
+        const lei = novoFormatoMatch[1];
+        const artigo = novoFormatoMatch[2]; // Captura apenas o número do artigo principal
+        return `Lei: ${lei}, Art.: ${artigo}`;
+    }
+
+    // 3. LÓGICA ANTIGA (FALLBACK): Mantém a busca por "Artigo:" para garantir a compatibilidade.
+    const leiMatch = [...trecho.matchAll(/Lei:\s*(\d+)/gi)];
+    const artigosEncontrados = [...trecho.matchAll(/Artigo:\s*([\w\d.,º§°]+)/gi)];
 
     if (leiMatch.length > 0 && artigosEncontrados.length > 0) {
-        // Pega o último match de Lei, que tende a ser o correto em casos de múltiplos
-        const lei = leiMatch[leiMatch.length-1][1]; 
+        const lei = leiMatch[leiMatch.length - 1][1];
         const artigosUnicos = [...new Set(artigosEncontrados.map(m => m[1].trim()))];
         return `Lei: ${lei}, Art.: ${artigosUnicos.join(', ')}`;
     }
-    return '';
+
+    return ''; // Retorna vazio se nenhum formato for encontrado
 }
+
 
 /**
  * Extrai texto e dados de um arquivo PDF e retorna um objeto com as informações.
@@ -158,8 +172,12 @@ async function extractDataFromPDF(pdfFile) {
             dataValidade: '',
             artigo: '',
             condenacao: '',
-            tipDoc: tipDoc
+            tipDoc: tipDoc,
+            especiePrisao: '' // Adicionado para armazenar a espécie de prisão
         };
+
+        // Adicionada a extração da espécie de prisão
+        dados.especiePrisao = extractBetween(textoCompleto, 'Espécie de prisão:', 'Tipificação Penal:').trim().toUpperCase();
 
         dados.numCpf = extractCPF(textoCompleto) || '';
         if (dados.numCpf) {

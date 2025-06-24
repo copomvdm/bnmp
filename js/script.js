@@ -249,13 +249,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // NOVA FUNÇÃO para verificar mães duplicadas
     function verificarMaesDuplicadas(todosOsDados, mostrarModal) {
         document.querySelectorAll('.mae-duplicada-icon, .mae-duplicada-icon-tabela').forEach(icon => icon.classList.add('d-none'));
 
         const maes = {};
         todosOsDados.forEach((dado, index) => {
-            // Verifica se o nome da mãe existe e não é um valor genérico
             if (dado.mae && dado.mae !== 'NAO INFORMADO' && dado.mae.length > 5) {
                 if (!maes[dado.mae]) {
                     maes[dado.mae] = [];
@@ -290,57 +288,98 @@ document.addEventListener('DOMContentLoaded', function () {
     async function analisarErenderTodosOsResultados(fazerAnaliseCompleta = true) {
         resultadosContainer.innerHTML = '';
         tabelaCorpo.innerHTML = '';
-
+    
         if (fazerAnaliseCompleta) {
             btnAnalisarPDF.disabled = true;
             btnAnalisarPDF.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analisando...`;
-            
-            currentAnalysisData = [];
+    
+            // Extrai dados de todos os arquivos em paralelo
+            const analysisPromises = currentManagedFiles.map(file => 
+                extractDataFromPDF(file).then(data => ({ data, file }))
+            );
+            const results = await Promise.all(analysisPromises);
+    
+            let validResults = [];
             let arquivosInvalidos = [];
-
-            for (const file of currentManagedFiles) {
-                const dados = await extractDataFromPDF(file);
-                if (dados) {
-                    currentAnalysisData.push(dados);
+    
+            results.forEach(result => {
+                if (result.data) {
+                    // Associa o arquivo original aos dados extraídos
+                    validResults.push({ ...result.data, originalFile: result.file });
                 } else {
-                    arquivosInvalidos.push(file.name);
+                    arquivosInvalidos.push(result.file.name);
                 }
-            }
-
+            });
+    
+            // --- INÍCIO: LÓGICA DE VERIFICAÇÃO DE DUPLICATAS (NOME + CPF) ---
+            const seen = new Map();
+            const uniqueAnalyses = [];
+            const ignoredDuplicates = [];
+    
+            validResults.forEach(data => {
+                // A duplicata é considerada apenas se ambos, nome e CPF, existirem e forem iguais
+                if (data.nome && data.numCpf) {
+                    const compositeKey = `${data.nome.trim().toUpperCase()}-${data.numCpf.replace(/\D/g, '')}`;
+                    if (seen.has(compositeKey)) {
+                        ignoredDuplicates.push(data.fileName);
+                    } else {
+                        seen.set(compositeKey, true);
+                        uniqueAnalyses.push(data);
+                    }
+                } else {
+                    // Se os dados estiverem incompletos para a verificação, o arquivo é mantido
+                    uniqueAnalyses.push(data);
+                }
+            });
+    
+            // Atualiza os arrays principais com os dados únicos e válidos
+            currentAnalysisData = uniqueAnalyses;
+            currentManagedFiles = currentAnalysisData.map(analysis => analysis.originalFile);
+    
+            // Atualiza a UI para remover visualmente os arquivos inválidos/duplicados
+            updateFileUI(); 
+            // --- FIM: LÓGICA DE VERIFICAÇÃO DE DUPLICATAS ---
+    
+            // --- Consolidação de mensagens para o modal ---
+            let modalMessages = [];
             if (arquivosInvalidos.length > 0) {
-                showModalError(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
+                modalMessages.push(`Os seguintes arquivos não puderam ser processados ou não são mandados válidos:<br> - ${arquivosInvalidos.join('<br> - ')}`);
+            }
+            if (ignoredDuplicates.length > 0) {
+                modalMessages.push(`Os seguintes arquivos foram ignorados por conterem nome e CPF duplicados (apenas um foi mantido):<br> - ${ignoredDuplicates.join('<br> - ')}`);
+            }
+            if (modalMessages.length > 0) {
+                showModalError(modalMessages.join('<hr class="my-3">'));
             }
         }
-
+    
         if (currentAnalysisData.length === 0) {
             sectionTabela.classList.add('d-none');
-            if (fazerAnaliseCompleta) {
-                btnAnalisarPDF.disabled = false;
-                btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
-            }
+            btnAnalisarPDF.disabled = false;
+            btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
             return;
         }
-
+    
         currentAnalysisData.forEach((dados, index) => {
             criarCardResultado(dados, index);
             adicionarLinhaTabela(dados, index);
         });
-
+    
         sectionTabela.classList.remove('d-none');
-
+    
         if (fazerAnaliseCompleta) {
             const primeiroResultado = resultadosContainer.querySelector('.section-resultado:first-child');
             if (primeiroResultado) {
                 primeiroResultado.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-            btnAnalisarPDF.disabled = false;
-            btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
         }
         
-        // Executa AMBAS as verificações
+        btnAnalisarPDF.disabled = false;
+        btnAnalisarPDF.innerHTML = `<i class="bi bi-search me-2"></i> Analisar PDF(s)`;
+        
         verificarProcessosDuplicados(currentAnalysisData, fazerAnaliseCompleta);
         verificarMaesDuplicadas(currentAnalysisData, fazerAnaliseCompleta);
-
+    
         inicializarTooltips();
     }
 
@@ -377,6 +416,39 @@ document.addEventListener('DOMContentLoaded', function () {
         atualizarTabelaComEquipe();
     });
 
+    // *** NOVO CÓDIGO ADICIONADO ***
+    // Adiciona um ouvinte para o duplo clique na tabela para navegar até o card.
+    tabelaCorpo.addEventListener('dblclick', function(e) {
+        const targetCell = e.target.closest('td');
+
+        // Verifica se o clique duplo foi na primeira célula (coluna do nome)
+        if (targetCell && targetCell.cellIndex === 0) {
+            const row = targetCell.closest('tr');
+            if (row && row.dataset.analysisId) {
+                const analysisId = row.dataset.analysisId;
+                const resultCard = document.querySelector(`.section-resultado[data-analysis-id="${analysisId}"]`);
+                if (resultCard) {
+                    // Rola a tela suavemente até o card correspondente
+                    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Adiciona um destaque visual temporário ao card
+                    const cardBody = resultCard.querySelector('.card-body');
+                    if (cardBody) {
+                        cardBody.style.transition = 'background-color 0.2s ease-in-out';
+                        cardBody.style.backgroundColor = '#e9ecef'; // Cor de destaque
+                        setTimeout(() => {
+                            // Remove a cor de destaque, respeitando a cor de 'feito' se já estiver aplicada
+                            if (!cardBody.classList.contains('talao-gerado')) {
+                                cardBody.style.backgroundColor = '';
+                            }
+                        }, 1200); 
+                    }
+                }
+            }
+        }
+    });
+    // *** FIM DO CÓDIGO ADICIONADO ***
+
     function criarCardResultado(data, id) {
         const clone = templateResultado.content.cloneNode(true);
         
@@ -406,7 +478,6 @@ document.addEventListener('DOMContentLoaded', function () {
             abrirModalConfirmacao(id, data.nome);
         });
 
-        // --- INÍCIO DA MODIFICAÇÃO ---
         const editableDiv = clone.querySelector('.textarea-resultado');
         const checkFoto = clone.querySelector('.check-foto');
         const labelFoto = clone.querySelector('.form-check-label');
@@ -420,9 +491,27 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const rgTexto = data.numRg ? `, <strong>RG:</strong> ${data.numRg}` : '';
         const cpfTexto = data.numCpf ? `, <strong>CPF:</strong> ${data.numCpf}` : '';
-        const artigoTexto = data.artigo ? `<strong>TIP PENAL:</strong> ${data.artigo.replace('Art.:', '<strong>Art.:</strong>')}` : '';
-        const condenacaoTexto = (data.condenacao && data.condenacao.trim().toLowerCase() !== 'null') ? `PENA IMPOSTA: ${data.condenacao.trim()}` : '';
-        const textoBase = `CONSTA ${data.tipDoc} VIA BNMP <strong>CONTRA:</strong> ${data.nome}${rgTexto}${cpfTexto}, - <strong>MANDADO Nº:</strong> ${data.numMandado}, - <strong>PROCESSO Nº:</strong> ${data.numProcesso}, ${artigoTexto}, - <strong>EXPEDIDO EM:</strong> ${data.dataExp}, - <strong>VÁLIDO ATÉ:</strong> ${data.dataValidade}, ${condenacaoTexto} / COPOM CAPTURA.`;
+
+        const parts = [
+            `CONSTA ${data.tipDoc} VIA BNMP <strong>CONTRA:</strong> ${data.nome}${rgTexto}${cpfTexto}`,
+            `- <strong>MANDADO Nº:</strong> ${data.numMandado}`,
+            `- <strong>PROCESSO Nº:</strong> ${data.numProcesso}`
+        ];
+
+        if (data.especiePrisao === 'CIVIL') {
+            parts.push('<strong>ESPÉCIE DE PRISÃO:</strong> Civil');
+        } else if (data.artigo) {
+            parts.push(`<strong>TIP PENAL:</strong> ${data.artigo.replace('Art.:', '<strong>Art.:</strong>')}`);
+        }
+
+        parts.push(`- <strong>EXPEDIDO EM:</strong> ${data.dataExp}`);
+        parts.push(`- <strong>VÁLIDO ATÉ:</strong> ${data.dataValidade}`);
+
+        if (data.condenacao && data.condenacao.trim().toLowerCase() !== 'null') {
+            parts.push(`<strong>PENA IMPOSTA:</strong> ${data.condenacao.trim()}`);
+        }
+
+        const textoBase = parts.join(', ').replace(/, -/g, ' -') + ' / COPOM CAPTURA.';
         
         editableDiv.innerHTML = textoBase;
         contagem.textContent = `${editableDiv.innerText.length} caracteres`;
@@ -436,11 +525,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const textoFoto = ' POSSUI FOTO';
             const textoFinal = ' / COPOM CAPTURA.';
             
-            // Remove a marcação de foto para evitar duplicação
             currentHtml = currentHtml.replace(textoFoto, '');
 
             if (this.checked) {
-                // Insere a marcação de foto antes do final
                 currentHtml = currentHtml.replace(textoFinal, `${textoFoto}${textoFinal}`);
             }
             editableDiv.innerHTML = currentHtml;
@@ -448,10 +535,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         
         btnCopiarResumo.addEventListener('click', () => {
-            // Copia o texto visível (sem as tags HTML)
             navigator.clipboard.writeText(editableDiv.innerText.toUpperCase()).then(() => showToast("Resumo copiado!"));
         });
-        // --- FIM DA MODIFICAÇÃO ---
         
         const infoBadgeNome = clone.querySelector('.info-badge-nome');
         const infoBadgeCpf = clone.querySelector('.info-badge-cpf');
@@ -525,7 +610,6 @@ document.addEventListener('DOMContentLoaded', function () {
         resultadosContainer.appendChild(clone);
     }
     
-    // ATUALIZADO: Inclui placeholders para ambos os ícones
     function adicionarLinhaTabela(data, id) {
         const row = tabelaCorpo.insertRow();
         row.dataset.analysisId = id;
@@ -536,12 +620,23 @@ document.addEventListener('DOMContentLoaded', function () {
             <span class="mae-duplicada-icon-tabela d-none" data-bs-toggle="tooltip" title="Esta pessoa parece ter a mesma mãe de outra na lista."><i class="bi bi-people-fill"></i></span>
             <span>${data.nome}</span>
         `;
+        // Adiciona um cursor para indicar que a célula é clicável
+        cellNome.style.cursor = 'pointer';
+
 
         row.insertCell(1).textContent = data.numRg;
         row.insertCell(2).textContent = data.numCpf;
         
-        const artigosSomente = data.artigo.match(/Art\.\:\s*(.+)/);
-        row.insertCell(3).textContent = artigosSomente ? artigosSomente[1] : '';
+        let textoArtigos;
+        if (data.especiePrisao === 'CIVIL') {
+            textoArtigos = 'CIVIL';
+        } else if (data.artigo) {
+            const artigosSomente = data.artigo.match(/Art\.\:\s*(.+)/);
+            textoArtigos = artigosSomente ? artigosSomente[1] : '';
+        } else {
+            textoArtigos = '';
+        }
+        row.insertCell(3).textContent = textoArtigos;
         
         const cellEquipe = row.insertCell(4);
         cellEquipe.textContent = selectEquipe.options[selectEquipe.selectedIndex].text;
